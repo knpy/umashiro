@@ -194,11 +194,13 @@ cython_debug/
 # PyPI configuration file
 .pypirc
 
-# Keiba - track data files (DB-less, JSON is our database)
-!data/
-!data/**/*.json
-!reports/
-!reports/**/*.md
+# Keiba - data files (sensitive: amounts, P&L)
+data/ledger.json
+data/predictions/
+data/results/
+data/bets/
+
+# Track these (no sensitive data)
 !models/
 !models/**/*.json
 !knowledge/
