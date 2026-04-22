@@ -193,7 +193,11 @@ def main():
 
     # モデル一覧を取得
     if args.model:
-        model_files = [Path(args.model)]
+        model_path = Path(args.model).resolve()
+        if not str(model_path).startswith(str(models_dir.resolve())):
+            print(f"[ERROR] Model path must be within models/ directory")
+            sys.exit(1)
+        model_files = [model_path]
     elif args.official_only:
         model_files = [models_dir / "official.json"]
     else:
