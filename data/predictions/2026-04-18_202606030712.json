@@ -1,0 +1,186 @@
+{
+  "date": "2026-04-18",
+  "race_id": "202606030712",
+  "race_name": "葛飾特別",
+  "venue": "中山",
+  "course_info": "ダ1200m",
+  "head_count": 13,
+  "verdict": "BET",
+  "confidence": "B",
+  "verdict_reason": "自信度B, 主軸EV=2.72",
+  "rankings": [
+    {
+      "rank": 1,
+      "num": "7",
+      "name": "ハヤテノツバサ",
+      "score": 55.6,
+      "ev": 2.72,
+      "style": "先行"
+    },
+    {
+      "rank": 2,
+      "num": "5",
+      "name": "ホウオウプレミア",
+      "score": 52.0,
+      "ev": 1.43,
+      "style": "追込"
+    },
+    {
+      "rank": 3,
+      "num": "12",
+      "name": "ライトニングゼウス",
+      "score": 49.4,
+      "ev": 0.22,
+      "style": "先行"
+    },
+    {
+      "rank": 4,
+      "num": "13",
+      "name": "ルイステソーロ",
+      "score": 48.7,
+      "ev": 0.8,
+      "style": "逃げ"
+    },
+    {
+      "rank": 5,
+      "num": "8",
+      "name": "タイセイルヴァン",
+      "score": 48.3,
+      "ev": 0.81,
+      "style": "先行"
+    },
+    {
+      "rank": 6,
+      "num": "11",
+      "name": "サマースイートピー",
+      "score": 47.4,
+      "ev": 1.47,
+      "style": "差し"
+    },
+    {
+      "rank": 7,
+      "num": "10",
+      "name": "ドナカルナバル",
+      "score": 47.0,
+      "ev": 1.03,
+      "style": "逃げ"
+    },
+    {
+      "rank": 8,
+      "num": "4",
+      "name": "ケンキョ",
+      "score": 41.8,
+      "ev": 0.32,
+      "style": "差し"
+    },
+    {
+      "rank": 9,
+      "num": "3",
+      "name": "フォーワンセルフ",
+      "score": 38.0,
+      "ev": 0.54,
+      "style": "追込"
+    },
+    {
+      "rank": 10,
+      "num": "9",
+      "name": "アストラカ",
+      "score": 37.5,
+      "ev": 0.18,
+      "style": "差し"
+    },
+    {
+      "rank": 11,
+      "num": "6",
+      "name": "トロピカルヒーロー",
+      "score": 34.9,
+      "ev": 0.55,
+      "style": "追込"
+    },
+    {
+      "rank": 12,
+      "num": "2",
+      "name": "イモータルバード",
+      "score": 33.5,
+      "ev": 0.12,
+      "style": "差し"
+    },
+    {
+      "rank": 13,
+      "num": "1",
+      "name": "ブリーズオンチーク",
+      "score": 33.4,
+      "ev": 0.38,
+      "style": "差し"
+    }
+  ],
+  "bets": [
+    {
+      "type": "単勝",
+      "selections": "7",
+      "amount": 3000,
+      "reason": "EV=2.72"
+    },
+    {
+      "type": "馬連",
+      "selections": "7-5",
+      "amount": 3000,
+      "reason": "軸7-対抗5"
+    },
+    {
+      "type": "ワイド",
+      "selections": "7-11",
+      "amount": 2000,
+      "reason": "穴馬EV=1.47"
+    },
+    {
+      "type": "ワイド",
+      "selections": "7-10",
+      "amount": 2000,
+      "reason": "穴馬EV=1.03"
+    },
+    {
+      "type": "三連複",
+      "selections": "5-7-13",
+      "amount": 2000,
+      "reason": "軸7流し"
+    },
+    {
+      "type": "三連複",
+      "selections": "5-7-11",
+      "amount": 2000,
+      "reason": "軸7流し"
+    },
+    {
+      "type": "三連複",
+      "selections": "5-7-10",
+      "amount": 2000,
+      "reason": "軸7流し"
+    },
+    {
+      "type": "三連複",
+      "selections": "7-11-13",
+      "amount": 2000,
+      "reason": "軸7流し"
+    },
+    {
+      "type": "三連複",
+      "selections": "7-10-13",
+      "amount": 2000,
+      "reason": "軸7流し"
+    },
+    {
+      "type": "三連複",
+      "selections": "7-10-11",
+      "amount": 2000,
+      "reason": "軸7流し"
+    },
+    {
+      "type": "馬連",
+      "selections": "5-13",
+      "amount": 1000,
+      "reason": "押さえ"
+    }
+  ],
+  "model_version": "v1.0"
+}
