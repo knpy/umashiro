@@ -1,0 +1,72 @@
+name: Weekend Prediction
+
+on:
+  # 土日の朝9:00 JST (= 0:00 UTC) に自動実行
+  schedule:
+    - cron: '0 0 * * 6'  # 土曜 09:00 JST
+    - cron: '0 0 * * 0'  # 日曜 09:00 JST
+  # 手動実行も可能
+  workflow_dispatch:
+    inputs:
+      date:
+        description: '対象日 (YYYYMMDD, 空=今日)'
+        required: false
+      venue:
+        description: '会場フィルタ (空=全会場)'
+        required: false
+      official_only:
+        description: '正モデルのみ実行'
+        type: boolean
+        default: false
+
+jobs:
+  predict:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run prediction
+        env:
+          XAI_API_KEY: ${{ secrets.XAI_API_KEY }}
+        run: |
+          DATE="${{ github.event.inputs.date }}"
+          VENUE="${{ github.event.inputs.venue }}"
+          OFFICIAL="${{ github.event.inputs.official_only }}"
+
+          # デフォルト: 今日の日付 (JST)
+          if [ -z "$DATE" ]; then
+            DATE=$(TZ=Asia/Tokyo date +%Y%m%d)
+          fi
+
+          ARGS="--date $DATE --delay 1.5"
+          if [ -n "$VENUE" ]; then
+            ARGS="$ARGS --venue $VENUE"
+          fi
+          if [ "$OFFICIAL" = "true" ]; then
+            ARGS="$ARGS --official-only"
+          fi
+
+          echo "Running: python3 scripts/run_predict.py $ARGS"
+          python3 scripts/run_predict.py $ARGS
+
+      - name: Commit predictions
+        run: |
+          git config user.name "keiba-bot"
+          git config user.email "keiba-bot@users.noreply.github.com"
+          git add data/ reports/
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+          else
+            DATE=$(TZ=Asia/Tokyo date +%Y-%m-%d)
+            git commit -m "predictions: $DATE auto-generated"
+            git push
+          fi

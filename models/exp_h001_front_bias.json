@@ -1,0 +1,28 @@
+{
+  "name": "exp_h001_front_bias",
+  "version": "v1.0-exp1",
+  "description": "仮説H-001検証: ダ短距離の先行バイアス強化。展開利+騎手の配点を増やし、上がり3Fを減らす",
+  "created": "2026-04-22",
+  "is_official": false,
+  "hypothesis": "H-001",
+  "weights": {
+    "time_index": 0.22,
+    "last_3f_index": 0.12,
+    "stability_index": 0.08,
+    "course_fitness": 0.13,
+    "pace_advantage": 0.12,
+    "form_cycle": 0.08,
+    "weight_score": 0.03,
+    "class_score": 0.05,
+    "rest_days_score": 0.05,
+    "gate_bias_score": 0.05,
+    "jockey_score": 0.09
+  },
+  "strategy": {
+    "min_confidence": "B",
+    "min_primary_ev": 1.3,
+    "max_bet_points": 8,
+    "include_favorite_in_partners": true
+  },
+  "note": "展開利 0.09→0.12, 騎手 0.06→0.09, 上がり3F 0.16→0.12 に変更"
+}
