@@ -682,14 +682,28 @@ DEFAULT_WEIGHTS = {
 
 def load_model_config(path: str = None) -> dict:
     """モデルコンフィグJSONを読み込む。Noneならデフォルト配点を返す"""
+    default = {"name": "default", "version": "v1.0", "weights": DEFAULT_WEIGHTS}
     if path is None:
-        return {"name": "default", "version": "v1.0", "weights": DEFAULT_WEIGHTS}
+        return default
     import json
     from pathlib import Path
     p = Path(path)
-    if p.exists():
-        return json.loads(p.read_text(encoding="utf-8"))
-    return {"name": "default", "version": "v1.0", "weights": DEFAULT_WEIGHTS}
+    if not p.exists():
+        return default
+    try:
+        data = json.loads(p.read_text(encoding="utf-8"))
+        if not isinstance(data, dict):
+            return default
+        if "weights" in data:
+            if not isinstance(data["weights"], dict):
+                return default
+            # 未知のキーや不正な値を排除
+            for k, v in data["weights"].items():
+                if k not in DEFAULT_WEIGHTS or not isinstance(v, (int, float)):
+                    return default
+        return data
+    except (json.JSONDecodeError, UnicodeDecodeError):
+        return default
 
 
 def calculate_scores(race: RaceInfo, model_config: dict = None) -> list[HorseScore]:

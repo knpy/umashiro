@@ -297,6 +297,8 @@ class NetkeibaScraper:
 
     def get_horse_history(self, horse_id: str, limit: int = 5) -> list[HorseResult]:
         """馬の過去成績を取得する（SP版から取得）"""
+        if not re.match(r'^[a-zA-Z0-9]+$', horse_id):
+            return []
         url = f"{self.HORSE_SP_URL}/{horse_id}/"
         soup = self._get(url)
 
@@ -376,7 +378,7 @@ class NetkeibaScraper:
         騎手の今年の成績を取得する。
         Returns: {"wins": int, "seconds": int, "thirds": int, "starts": int, "win_rate": float, "place_rate": float}
         """
-        if not jockey_id:
+        if not jockey_id or not re.match(r'^[a-zA-Z0-9]+$', jockey_id):
             return {}
 
         url = f"https://db.netkeiba.com/jockey/result/recent/{jockey_id}/"
