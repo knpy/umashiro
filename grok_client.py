@@ -106,8 +106,8 @@ class GrokClient:
 
         except json.JSONDecodeError:
             return {"raw_summary": text, "error": "JSON parse failed"}
-        except Exception as e:
-            return {"error": str(e), "raw_summary": ""}
+        except Exception:
+            return {"error": "Failed to fetch predictions", "raw_summary": ""}
 
     def get_expert_predictions(self, venue: str, race_name: str, race_number: int) -> dict:
         """特定レースの専門家予想を取得"""
