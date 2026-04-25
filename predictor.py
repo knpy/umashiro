@@ -58,16 +58,17 @@ TRACK_CONDITION_ADJUST = {
 }
 
 # 会場別タイム補正（中山基準、マイナス=速い傾向）
+# ※ 初期値は控えめに設定。実データで要検証（H-004）
 VENUE_TIME_ADJUST = {
-    "東京": -1.0,
-    "阪神": -0.5,
-    "京都": -0.8,
+    "東京": -0.5,
+    "阪神": -0.3,
+    "京都": -0.4,
     "中京": 0.0,
-    "新潟": -0.3,
-    "福島": 0.3,
+    "新潟": -0.2,
+    "福島": 0.2,
     "小倉": 0.0,
-    "札幌": 0.5,
-    "函館": 0.5,
+    "札幌": 0.3,
+    "函館": 0.3,
     "中山": 0.0,
 }
 
@@ -825,13 +826,13 @@ DEFAULT_WEIGHTS = {
     "stability_index": 0.08,
     "course_fitness": 0.13,
     "pace_advantage": 0.09,
-    "form_cycle": 0.07,        # v1.1: 0.08→0.07 (track_fitness追加分を再配分)
-    "weight_score": 0.02,      # v1.1: 0.03→0.02 (track_fitness追加分を再配分)
+    "form_cycle": 0.06,        # v1.1: 0.08→0.06 (track_fitness追加分を再配分)
+    "weight_score": 0.01,      # v1.1: 0.03→0.01 (track_fitness追加分を再配分)
     "track_fitness": 0.04,     # v1.1: 馬場適性（新規）
     "class_score": 0.05,
     "rest_days_score": 0.05,
     "gate_bias_score": 0.05,
-    "jockey_score": 0.04,      # v1.1: 0.06→0.04 (track_fitness追加分を再配分)
+    "jockey_score": 0.06,      # v1.1: 騎手能力は研究で有意、ウェイト維持
 }
 
 
