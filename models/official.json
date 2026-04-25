@@ -1,8 +1,8 @@
 {
   "name": "official",
-  "version": "v1.0",
-  "description": "初期モデル。タイム重視の標準配点",
-  "created": "2026-04-18",
+  "version": "v1.1",
+  "description": "v1.1: 馬場補正・転向検出・コース特性・騎手会場実績を追加した科学的改善版",
+  "created": "2026-04-25",
   "is_official": true,
   "weights": {
     "time_index": 0.22,
@@ -10,12 +10,13 @@
     "stability_index": 0.08,
     "course_fitness": 0.13,
     "pace_advantage": 0.09,
-    "form_cycle": 0.08,
-    "weight_score": 0.03,
+    "form_cycle": 0.07,
+    "weight_score": 0.02,
+    "track_fitness": 0.04,
     "class_score": 0.05,
     "rest_days_score": 0.05,
     "gate_bias_score": 0.05,
-    "jockey_score": 0.06
+    "jockey_score": 0.04
   },
   "strategy": {
     "min_confidence": "B",

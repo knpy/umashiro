@@ -20,6 +20,7 @@ class HorseScore:
     class_score: float = 0.0       # クラス補正
     form_cycle: float = 0.0        # 調子サイクル
     weight_score: float = 0.0      # 馬体重スコア
+    track_fitness: float = 0.0     # 馬場適性
     odds_score: float = 0.0        # オッズ評価
     rest_days_score: float = 0.0   # 休養日数スコア
     gate_bias_score: float = 0.0   # 枠順バイアス
@@ -54,6 +55,37 @@ TRACK_CONDITION_ADJUST = {
     "重": 1.5,
     "不": 3.0,   # 不良
     "不良": 3.0,
+}
+
+# 会場別タイム補正（中山基準、マイナス=速い傾向）
+VENUE_TIME_ADJUST = {
+    "東京": -1.0,
+    "阪神": -0.5,
+    "京都": -0.8,
+    "中京": 0.0,
+    "新潟": -0.3,
+    "福島": 0.3,
+    "小倉": 0.0,
+    "札幌": 0.5,
+    "函館": 0.5,
+    "中山": 0.0,
+}
+
+# 上がり3F基準タイム（馬場状態別）
+BASE_3F_BY_CONDITION = {"良": 33.5, "稍": 34.0, "重": 34.8, "不": 35.5}
+
+# 直線距離(m)による展開利の倍率
+STRAIGHT_LENGTH = {
+    ("東京", "芝"): 525.5,
+    ("新潟", "芝"): 658.7,   # 外回り
+    ("阪神", "芝"): 473.6,   # 外回り
+    ("京都", "芝"): 403.7,   # 外回り
+    ("中山", "芝"): 310.0,
+    ("中京", "芝"): 412.5,
+    ("福島", "芝"): 292.0,
+    ("小倉", "芝"): 293.0,
+    ("札幌", "芝"): 266.1,
+    ("函館", "芝"): 262.1,
 }
 
 # 頭数補正: 少頭数は速くなりやすい
@@ -216,7 +248,10 @@ def calc_time_index(history: list[HorseResult]) -> float:
                 head_adjust = adj
                 break
 
-        adjusted_base = base + cond_adjust + head_adjust
+        # 会場別タイム補正（各過去走の会場ごとに基準を調整）
+        venue_adjust = VENUE_TIME_ADJUST.get(h.venue, 0.0)
+
+        adjusted_base = base + cond_adjust + head_adjust + venue_adjust
         diff = adjusted_base - time_sec  # プラスなら基準より速い
 
         score = 50.0 + diff * 5.0
@@ -233,8 +268,9 @@ def calc_time_index(history: list[HorseResult]) -> float:
 def calc_last_3f_index(history: list[HorseResult]) -> float:
     """
     上がり3F指数: 末脚の切れ味を評価
-    基準=50点、33.0秒を基準に0.1秒速いごとに+1点
+    基準=50点、0.1秒速いごとに+1点
     ※ JRA平地レースのみ対象（障害の上がり14秒台等を除外）
+    ※ 馬場状態別に基準タイムを変動させ、重馬場の不当なペナルティを解消
     """
     history = _filter_jra_flat(history)
     if not history:
@@ -242,14 +278,17 @@ def calc_last_3f_index(history: list[HorseResult]) -> float:
 
     scores = []
     weights = [1.0, 0.8, 0.6, 0.4, 0.3]
-    BASE_3F = 33.5  # 基準上がり3F
 
     for i, h in enumerate(history):
         last_3f = _parse_float(h.last_3f)
         if last_3f <= 0:
             continue
 
-        diff = BASE_3F - last_3f  # プラスなら速い
+        # 各過去走の馬場状態に応じた基準タイムを使用
+        cond_key = h.track_condition[:1] if h.track_condition else "良"
+        base_3f = BASE_3F_BY_CONDITION.get(cond_key, 33.5)
+
+        diff = base_3f - last_3f  # プラスなら速い
         score = 50.0 + diff * 10.0
         w = weights[i] if i < len(weights) else 0.2
         scores.append((score, w))
@@ -460,6 +499,100 @@ def _detect_class_upgrade(history: list[HorseResult], current_race_name: str) ->
     return current_level > max_past
 
 
+def calc_track_fitness(history: list[HorseResult], target_condition: str) -> float:
+    """
+    馬場適性: 今回の馬場状態と同じ条件での過去成績を評価
+    同馬場で好走実績があればボーナス、逆パターン（良のみ好走→今回重）はリスク
+    ※ 平地レースのみ対象
+    """
+    history = _filter_flat(history)
+    if not history:
+        return 50.0
+
+    target_key = target_condition[:1] if target_condition else "良"
+
+    same_cond_results = []
+    other_cond_results = []
+
+    for h in history:
+        pos = _parse_int(h.finish_position)
+        if pos <= 0:
+            continue
+        cond_key = h.track_condition[:1] if h.track_condition else "良"
+        if cond_key == target_key:
+            same_cond_results.append(pos)
+        else:
+            other_cond_results.append(pos)
+
+    score = 50.0
+
+    if same_cond_results:
+        # 同馬場での平均着順で評価
+        avg_pos = sum(same_cond_results) / len(same_cond_results)
+        # 複勝圏内率
+        top3_rate = sum(1 for p in same_cond_results if p <= 3) / len(same_cond_results)
+        # 平均着順ボーナス: 1着平均=+15, 3着平均=+5, 5着平均=-5
+        score += (4 - avg_pos) * 5
+        # 複勝率ボーナス
+        score += top3_rate * 10
+        # データ量ボーナス（2走以上あれば信頼性UP）
+        if len(same_cond_results) >= 2:
+            score += 3.0
+    else:
+        # 同馬場実績なし: 未知数として小さなペナルティ
+        score -= 3.0
+
+        # 逆パターンチェック: 良のみ好走なのに今回重/不良
+        if target_key in ("重", "不") and other_cond_results:
+            good_cond_results = []
+            for h in history:
+                pos = _parse_int(h.finish_position)
+                cond_key = h.track_condition[:1] if h.track_condition else "良"
+                if cond_key == "良" and pos > 0:
+                    good_cond_results.append(pos)
+            if good_cond_results:
+                good_avg = sum(good_cond_results) / len(good_cond_results)
+                # 良場でのみ好走している馬は重馬場リスク
+                if good_avg <= 3.0:
+                    score -= 5.0
+
+    return max(30, min(70, score))
+
+
+def _detect_surface_switch(history: list[HorseResult], target_surface: str) -> str:
+    """
+    芝/ダート転向を検出する
+    過去走の80%以上が一方の馬場で、今回が他方の場合に転向と判定
+    Returns: "芝→ダ転向", "ダ→芝転向", or "" (転向なし)
+    """
+    if not target_surface or not history:
+        return ""
+
+    history = _filter_flat(history)
+    if len(history) < 3:
+        return ""
+
+    surface_counts = {"芝": 0, "ダ": 0}
+    for h in history:
+        s, _ = _parse_distance(h.distance)
+        if s in surface_counts:
+            surface_counts[s] += 1
+
+    total = surface_counts["芝"] + surface_counts["ダ"]
+    if total == 0:
+        return ""
+
+    turf_ratio = surface_counts["芝"] / total
+    dirt_ratio = surface_counts["ダ"] / total
+
+    if target_surface == "ダ" and turf_ratio >= 0.8:
+        return "芝→ダ転向"
+    elif target_surface == "芝" and dirt_ratio >= 0.8:
+        return "ダ→芝転向"
+
+    return ""
+
+
 def calc_class_score(history: list[HorseResult], entry: HorseEntry) -> float:
     """
     クラス補正: 過去のレースのレベルと今回のクラスを比較
@@ -619,9 +752,10 @@ def calc_gate_bias_score(entry: HorseEntry, venue: str, surface: str, distance: 
     return 50.0 + bias.get(frame, 0)
 
 
-def calc_jockey_score(entry: HorseEntry) -> float:
+def calc_jockey_score(entry: HorseEntry, target_venue: str = "") -> float:
     """
-    騎手スコア: 騎手の今年の勝率・複勝率 + 同馬コンビ実績
+    騎手スコア: 騎手の今年の勝率・複勝率 + 同馬コンビ実績 + 会場別実績
+    target_venue: 今回の開催会場（会場別実績ボーナス用）
     """
     score = 50.0
 
@@ -658,6 +792,26 @@ def calc_jockey_score(entry: HorseEntry) -> float:
             if len(same_jockey_results) >= 2:
                 score += 3.0
 
+    # 騎手の会場別実績: この馬の過去走から、同騎手×同会場の成績を抽出
+    # （この馬の履歴に限定されるため部分的なシグナルだが方向性は正しい）
+    # TODO: 将来的にはjockey_statsに会場別成績を追加してより正確に評価する
+    if target_venue and entry.history and entry.jockey:
+        venue_jockey_results = []
+        for h in entry.history:
+            if entry.jockey in h.jockey and target_venue in h.venue:
+                pos = _parse_int(h.finish_position)
+                if pos > 0:
+                    venue_jockey_results.append(pos)
+
+        if venue_jockey_results:
+            venue_avg = sum(venue_jockey_results) / len(venue_jockey_results)
+            venue_top3 = sum(1 for p in venue_jockey_results if p <= 3) / len(venue_jockey_results)
+            # 小さなボーナス/ペナルティ（データが限定的なので控えめ）
+            if venue_top3 >= 0.5:
+                score += 3.0  # この会場で好成績
+            elif venue_avg >= 8.0:
+                score -= 2.0  # この会場で苦戦傾向
+
     return max(30, min(75, score))
 
 
@@ -671,12 +825,13 @@ DEFAULT_WEIGHTS = {
     "stability_index": 0.08,
     "course_fitness": 0.13,
     "pace_advantage": 0.09,
-    "form_cycle": 0.08,
-    "weight_score": 0.03,
+    "form_cycle": 0.07,        # v1.1: 0.08→0.07 (track_fitness追加分を再配分)
+    "weight_score": 0.02,      # v1.1: 0.03→0.02 (track_fitness追加分を再配分)
+    "track_fitness": 0.04,     # v1.1: 馬場適性（新規）
     "class_score": 0.05,
     "rest_days_score": 0.05,
     "gate_bias_score": 0.05,
-    "jockey_score": 0.06,
+    "jockey_score": 0.04,      # v1.1: 0.06→0.04 (track_fitness追加分を再配分)
 }
 
 
@@ -729,6 +884,35 @@ def calculate_scores(race: RaceInfo, model_config: dict = None) -> list[HorseSco
     if target_distance_info:
         target_surface, target_distance = _parse_distance(target_distance_info)
 
+    # 今回の馬場状態をcourse_infoからパース（例: "芝1600m / 良" → "良"）
+    current_track_condition = ""
+    for cond in ["不良", "不", "重", "稍重", "稍", "良"]:
+        if cond in course_info:
+            current_track_condition = cond
+            break
+
+    # 展開利のコース特性倍率を算出
+    venue = race.venue or ""
+    straight = STRAIGHT_LENGTH.get((venue, target_surface), 0)
+    # 直線距離に基づく倍率: 短い直線→前有利、長い直線→後ろ有利
+    if straight > 0 and target_surface == "芝":
+        if straight <= 300:
+            front_multiplier = 1.4    # 短直線: 逃げ先行に大ボーナス
+            closer_multiplier = 0.8   # 差し追込は不利
+        elif straight <= 400:
+            front_multiplier = 1.2
+            closer_multiplier = 1.0
+        elif straight >= 500:
+            front_multiplier = 0.8    # 長直線: 逃げ先行の利が薄い
+            closer_multiplier = 1.3   # 差し追込に大ボーナス
+        else:
+            front_multiplier = 1.0
+            closer_multiplier = 1.1
+    else:
+        # ダートまたは直線データなし: デフォルト倍率
+        front_multiplier = 1.0
+        closer_multiplier = 1.0
+
     # 全馬の脚質を判定（ペース予測用）
     running_styles = {}
     for entry in race.entries:
@@ -758,11 +942,12 @@ def calculate_scores(race: RaceInfo, model_config: dict = None) -> list[HorseSco
         hs.last_3f_index = calc_last_3f_index(entry.history)
         hs.stability_index = calc_stability_index(entry.history)
         hs.course_fitness = calc_course_fitness(
-            entry.history, target_venue=race.venue or "", target_distance_info=target_distance_info
+            entry.history, target_venue=venue, target_distance_info=target_distance_info
         )
         hs.form_cycle = calc_form_cycle(entry.history)
         hs.weight_score = calc_weight_score(entry)
         hs.class_score = calc_class_score(entry.history, entry)
+        hs.track_fitness = calc_track_fitness(entry.history, current_track_condition)
         hs.running_style = running_styles.get(entry.horse_number, "不明")
 
         # クラス昇級初戦の補正:
@@ -772,14 +957,21 @@ def calculate_scores(race: RaceInfo, model_config: dict = None) -> list[HorseSco
             hs.stability_index = hs.stability_index * 0.7 + 50.0 * 0.3  # 50点方向に30%寄せる
             hs.form_cycle = hs.form_cycle * 0.7 + 50.0 * 0.3
 
+        # 芝/ダート転向検出
+        surface_switch = _detect_surface_switch(entry.history, target_surface)
+        if surface_switch:
+            # 転向馬は未知数 → 安定性・タイム指数を50点方向に30%寄せる
+            hs.stability_index = hs.stability_index * 0.7 + 50.0 * 0.3
+            hs.time_index = hs.time_index * 0.7 + 50.0 * 0.3
+
         # 新スコア
         hs.odds = entry.odds or ""
         hs.odds_score = calc_odds_score(entry)
         hs.rest_days_score = calc_rest_days_score(entry.history)
         hs.gate_bias_score = calc_gate_bias_score(
-            entry, race.venue or "", target_surface, target_distance
+            entry, venue, target_surface, target_distance
         )
-        hs.jockey_score = calc_jockey_score(entry)
+        hs.jockey_score = calc_jockey_score(entry, target_venue=venue)
 
         # 展開利の計算
         style = hs.running_style
@@ -789,6 +981,12 @@ def calculate_scores(race: RaceInfo, model_config: dict = None) -> list[HorseSco
             pace_bonus = {"逃げ": 8, "先行": 5, "差し": -3, "追込": -8}.get(style, 0)
         else:
             pace_bonus = {"先行": 3, "逃げ": 1, "差し": 0, "追込": -2}.get(style, 0)
+
+        # コース特性による展開利の倍率適用
+        if style in ("逃げ", "先行"):
+            pace_bonus *= front_multiplier
+        elif style in ("差し", "追込"):
+            pace_bonus *= closer_multiplier
 
         # 騎手ペース制御力補正:
         # ハイペース時でも騎手力が高い逃げ・先行馬はペナルティを軽減
@@ -808,6 +1006,7 @@ def calculate_scores(race: RaceInfo, model_config: dict = None) -> list[HorseSco
             hs.pace_advantage * w["pace_advantage"] +
             hs.form_cycle * w["form_cycle"] +
             hs.weight_score * w["weight_score"] +
+            hs.track_fitness * w.get("track_fitness", 0.0) +
             hs.class_score * w["class_score"] +
             hs.rest_days_score * w["rest_days_score"] +
             hs.gate_bias_score * w["gate_bias_score"] +
@@ -822,6 +1021,10 @@ def calculate_scores(race: RaceInfo, model_config: dict = None) -> list[HorseSco
             comments.append("末脚鋭い")
         if hs.course_fitness >= 60:
             comments.append("コース巧者")
+        if hs.track_fitness >= 60:
+            comments.append("馬場巧者")
+        elif hs.track_fitness <= 40:
+            comments.append("馬場不安")
         if hs.form_cycle >= 60:
             comments.append("上昇中")
         elif hs.form_cycle <= 40:
@@ -840,6 +1043,8 @@ def calculate_scores(race: RaceInfo, model_config: dict = None) -> list[HorseSco
             comments.append("枠不利")
         if is_upgrade:
             comments.append("昇級初戦")
+        if surface_switch:
+            comments.append(surface_switch)
 
         pace_desc = "ハイペース予想" if is_high_pace else ("スローペース予想" if is_slow_pace else "平均ペース予想")
         comments.insert(0, f"[{pace_desc}] 脚質:{style}")
@@ -918,7 +1123,7 @@ def scores_to_text(scores: list[HorseScore]) -> str:
         )
         lines.append(
             f"  展開利:{s.pace_advantage:.1f} / 調子:{s.form_cycle:.1f} / "
-            f"馬体重:{s.weight_score:.1f} / クラス:{s.class_score:.1f}"
+            f"馬体重:{s.weight_score:.1f} / 馬場適性:{s.track_fitness:.1f} / クラス:{s.class_score:.1f}"
         )
         lines.append(
             f"  オッズ:{s.odds_score:.1f} / 休養:{s.rest_days_score:.1f} / "
