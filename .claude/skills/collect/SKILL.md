@@ -1,6 +1,6 @@
 ---
 name: collect
-description: レース結果を収集し、予想と照合して精算する。的中/不的中の判定とレジャー更新。
+description: レース結果を収集し、予想と照合して精算する。的中/不的中の判定と台帳(ledger)更新。
 argument-hint: [--date YYYY-MM-DD]
 ---
 

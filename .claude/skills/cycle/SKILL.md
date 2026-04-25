@@ -48,7 +48,7 @@ if h.exists():
     for x in data:
         by_status.setdefault(x['status'], []).append(x['id'])
     for s, ids in by_status.items():
-        print(f'  {s}: {len(ids)}件 ({', '.join(ids)})')
+        print(f\"  {s}: {len(ids)}件 ({', '.join(ids)})\")
 else:
     print('  hypotheses.json未作成')
 " 2>/dev/null
@@ -58,9 +58,9 @@ else:
 
 確認した状態に基づいて、以下の優先順で次のアクションを案内する:
 
-1. **今日が土日で、今日の予想がまだない** → `/predict` を案内
-2. **今日の予想はあるが、結果がまだない（かつレース終了時刻を過ぎている）** → `/collect` を案内
-3. **今週の土日両方のcollectが完了していて、週次レビューがまだない** → `/review` を案内
+1. **開催日で、今日の予想がまだない**（`data/predictions/` に今日の日付のファイルがない）→ `/predict` を案内
+2. **今日の予想はあるが、結果がまだない**（`data/results/` に対応ファイルがない、かつ16:30以降）→ `/collect` を案内
+3. **直近のcollectが完了していて、該当週の週次レビューがまだない** → `/review` を案内
 4. **月末（25日以降）で、今月の週次レビューが2件以上ある** → `/knowledge` を案内
 5. **すべて最新** → 現在の状態サマリーを表示して終了
 

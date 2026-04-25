@@ -19,7 +19,7 @@ argument-hint: [--venue 会場名] [--date YYYYMMDD]
 
 - 引数なし → 今日の全開催
 - `--venue 東京` → 東京開催のみ
-- `--date 20260426` → 日付指定
+- `--date 20260426` → 日付指定（**YYYYMMDD形式**、ハイフンなし）
 - `--official-only` → 公式モデルのみ（実験モデルをスキップ）
 
 ### 2. 予想実行

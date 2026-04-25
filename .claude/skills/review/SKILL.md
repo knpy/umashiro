@@ -17,10 +17,16 @@ argument-hint: [--week YYYY-WNN]
 
 ### 1. 対象データの確認
 
+対象週の日付を特定し、以下を実行する（日付は実際の値に置き換える）:
+
 ```bash
-# 対象週の結果ファイル一覧
-ls data/results/ | grep "YYYY-MM-DD" | grep -v review | wc -l
-ls data/results/ | grep "YYYY-MM-DD" | grep review | wc -l
+# 例: 2026-04-25〜2026-04-26 の場合
+TARGET_DATES="2026-04-2"  # 対象週の日付プレフィックス
+
+# 結果ファイル数
+ls data/results/ | grep "$TARGET_DATES" | grep -v review | wc -l
+# レビューファイル数
+ls data/results/ | grep "$TARGET_DATES" | grep review | wc -l
 ```
 
 ### 2. スクリプト実行（存在する場合）
