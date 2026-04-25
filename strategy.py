@@ -5,6 +5,23 @@ from predictor import HorseScore
 
 
 @dataclass
+class StrategyConfig:
+    """BET/PASS判断の閾値設定（バックテストで変更可能）"""
+    min_confidence: str = "B"
+    min_primary_ev: float = 1.3
+    min_top3_ev: float = 1.3
+    min_history_races: int = 3
+    min_scored_horses: int = 8
+    score_diff_1_2_for_A: float = 5.0
+    primary_ev_min_for_A: float = 1.0
+    score_diff_1_3_for_B: float = 5.0
+    score_diff_1_5_max_for_C: float = 8.0
+
+
+DEFAULT_STRATEGY = StrategyConfig()
+
+
+@dataclass
 class BetDecision:
     """1レースの賭け判断"""
     race_id: str = ""
@@ -27,33 +44,35 @@ class BetPlan:
 
 
 # ============================================================================
-# 判断基準（凍結して運用、月次レビューで更新）
+# 後方互換のためモジュールレベル定数を維持
 # ============================================================================
 
-# 賭けるための最低条件
-MIN_CONFIDENCE = "B"           # C, D は見送り
-MIN_PRIMARY_EV = 1.3           # 主軸馬のEV閾値
-MIN_HISTORY_RACES = 3          # 各馬の最低過去走数
-MIN_SCORED_HORSES = 8          # スコアリング可能な最低頭数
+MIN_CONFIDENCE = DEFAULT_STRATEGY.min_confidence
+MIN_PRIMARY_EV = DEFAULT_STRATEGY.min_primary_ev
+MIN_HISTORY_RACES = DEFAULT_STRATEGY.min_history_races
+MIN_SCORED_HORSES = DEFAULT_STRATEGY.min_scored_horses
 
-# 自信度判定の閾値
 CONFIDENCE_THRESHOLDS = {
-    "A": {"score_diff_1_2": 5.0, "primary_ev_min": 1.0},
-    "B": {"score_diff_1_3": 5.0},
-    "C": {"score_diff_1_5_max": 8.0},
-    # D: 上記いずれにも該当しない
+    "A": {"score_diff_1_2": DEFAULT_STRATEGY.score_diff_1_2_for_A,
+          "primary_ev_min": DEFAULT_STRATEGY.primary_ev_min_for_A},
+    "B": {"score_diff_1_3": DEFAULT_STRATEGY.score_diff_1_3_for_B},
+    "C": {"score_diff_1_5_max": DEFAULT_STRATEGY.score_diff_1_5_max_for_C},
 }
 
 
-def assess_confidence(scores: list[HorseScore]) -> str:
+def assess_confidence(scores: list[HorseScore],
+                      config: StrategyConfig = None) -> str:
     """
     自信度を判定する
 
-    A(堅い): 1位と2位のスコア差>5点、かつ1位のEV>=1.0
-    B(やや自信): 1位と3位のスコア差>5点
-    C(混戦): 1位と5位のスコア差<8点
+    A(堅い): 1位と2位のスコア差>閾値、かつ1位のEV>=閾値
+    B(やや自信): 1位と3位のスコア差>閾値
+    C(混戦): 1位と5位のスコア差<閾値
     D(難解): それ以外
     """
+    if config is None:
+        config = DEFAULT_STRATEGY
+
     if len(scores) < 5:
         return "D"
 
@@ -61,78 +80,79 @@ def assess_confidence(scores: list[HorseScore]) -> str:
     diff_1_3 = scores[0].total_score - scores[2].total_score
     diff_1_5 = scores[0].total_score - scores[4].total_score
 
-    if diff_1_2 > 5.0 and scores[0].expected_value >= 1.0:
+    if diff_1_2 > config.score_diff_1_2_for_A and scores[0].expected_value >= config.primary_ev_min_for_A:
         return "A"
-    if diff_1_3 > 5.0:
+    if diff_1_3 > config.score_diff_1_3_for_B:
         return "B"
-    if diff_1_5 < 8.0:
+    if diff_1_5 < config.score_diff_1_5_max_for_C:
         return "C"
     return "D"
 
 
-def check_data_quality(scores: list[HorseScore], entries) -> tuple[bool, str]:
+def check_data_quality(scores: list[HorseScore], entries,
+                       config: StrategyConfig = None) -> tuple[bool, str]:
     """
     データ品質チェック
     Returns: (OK?, 理由)
     """
-    if len(scores) < MIN_SCORED_HORSES:
-        return False, f"スコアリング可能馬が{len(scores)}頭 (最低{MIN_SCORED_HORSES}頭)"
+    if config is None:
+        config = DEFAULT_STRATEGY
 
-    # 過去走データが不足している馬の数
-    low_data = 0
-    for entry in entries:
-        if len(entry.history) < MIN_HISTORY_RACES:
-            low_data += 1
+    if len(scores) < config.min_scored_horses:
+        return False, f"スコアリング可能馬が{len(scores)}頭 (最低{config.min_scored_horses}頭)"
 
-    # 上位5頭にデータ不足馬がいたら厳しい
     top5_numbers = {s.horse_number for s in scores[:5]}
     top5_low = sum(1 for e in entries
                    if e.horse_number in top5_numbers
-                   and len(e.history) < MIN_HISTORY_RACES)
+                   and len(e.history) < config.min_history_races)
 
-    if top5_low >= 2:
+    if top5_low >= 3:
         return False, f"上位5頭中{top5_low}頭がデータ不足"
 
     return True, "OK"
 
 
 def decide(scores: list[HorseScore], entries, race_id: str = "",
-           race_name: str = "") -> BetDecision:
+           race_name: str = "", config: StrategyConfig = None) -> BetDecision:
     """
     スコアリング結果から賭ける/見送りを判断する
 
     Returns: BetDecision
     """
+    if config is None:
+        config = DEFAULT_STRATEGY
+
     decision = BetDecision(race_id=race_id, race_name=race_name)
 
     # 1. 自信度判定
-    confidence = assess_confidence(scores)
+    confidence = assess_confidence(scores, config=config)
     decision.confidence = confidence
 
     # 2. データ品質チェック
-    data_ok, data_reason = check_data_quality(scores, entries)
+    data_ok, data_reason = check_data_quality(scores, entries, config=config)
 
-    # 3. 主軸馬のEV確認
+    # 3. 主軸馬のEV確認 + 上位3頭のEV確認
     primary = scores[0]
     primary_ev = primary.expected_value
+    top3_max_ev = max(s.expected_value for s in scores[:3]) if len(scores) >= 3 else primary_ev
 
     # 4. 判断
     reasons = []
 
-    if confidence in ("C", "D"):
+    conf_order = "ABCD"
+    if conf_order.index(confidence) > conf_order.index(config.min_confidence):
         decision.verdict = "PASS"
-        reasons.append(f"自信度{confidence}(閾値: {MIN_CONFIDENCE}以上)")
+        reasons.append(f"自信度{confidence}(閾値: {config.min_confidence}以上)")
 
     if not data_ok:
         decision.verdict = "PASS"
         reasons.append(data_reason)
 
-    if primary_ev > 0 and primary_ev < MIN_PRIMARY_EV:
+    if primary_ev > 0 and primary_ev < config.min_primary_ev and top3_max_ev < config.min_top3_ev:
         decision.verdict = "PASS"
-        reasons.append(f"主軸EV={primary_ev:.2f}(閾値: {MIN_PRIMARY_EV}以上)")
+        reasons.append(f"主軸EV={primary_ev:.2f}, 上位3頭最大EV={top3_max_ev:.2f}(妙味不足)")
 
     if primary_ev == 0:
-        # オッズデータなし → EVが計算できない → 判断保留
         reasons.append("オッズ未取得のためEV判定不可")
 
     if not reasons:
@@ -202,7 +222,6 @@ def generate_bet_plan(scores: list[HorseScore], confidence: str,
         ))
 
     # --- ワイド (バリュー馬絡み) ---
-    # EV>=1.2の穴馬（人気7番以下）がいれば
     value_longshots = [s for s in value_horses
                        if s.horse_number != primary.horse_number
                        and _parse_int(s.odds) >= 10.0]
@@ -218,7 +237,6 @@ def generate_bet_plan(scores: list[HorseScore], confidence: str,
 
     # --- 三連複 (軸1頭流し) ---
     if len(partners) >= 2:
-        # 相手上位から組み合わせ（最大6点）
         tri_partners = partners[:4]
         tri_count = 0
         for i in range(len(tri_partners)):

@@ -163,9 +163,21 @@ def _parse_int(s: str) -> int:
     return int(m.group(1)) if m else 0
 
 
-def _get_base_time(surface: str, distance: int) -> float:
-    """基準タイムを取得（近い距離で補間）"""
-    times = BASE_TIMES.get(surface, BASE_TIMES["芝"])
+def _get_base_time(surface: str, distance: int, venue: str = "",
+                   base_times_data: dict = None) -> float:
+    """基準タイムを取得（近い距離で補間）
+
+    base_times_data が指定された場合、データ駆動の基準タイムを使用する。
+    None の場合はハードコードの BASE_TIMES にフォールバック。
+    """
+    times = None
+    if base_times_data:
+        if venue:
+            times = base_times_data.get("per_venue", {}).get(venue, {}).get(surface)
+        if not times:
+            times = base_times_data.get("global", {}).get(surface)
+    if not times:
+        times = BASE_TIMES.get(surface, BASE_TIMES["芝"])
     if distance in times:
         return times[distance]
     # 補間
@@ -212,7 +224,8 @@ def _classify_running_style(history: list[HorseResult]) -> str:
 # スコアリング関数
 # ============================================================================
 
-def calc_time_index(history: list[HorseResult]) -> float:
+def calc_time_index(history: list[HorseResult],
+                    base_times_data: dict = None) -> float:
     """
     タイム指数: 走破タイムを基準タイムと比較してスコア化
     基準=50点、1秒速いごとに+5点
@@ -235,7 +248,8 @@ def calc_time_index(history: list[HorseResult]) -> float:
         if not surface or not distance:
             continue
 
-        base = _get_base_time(surface, distance)
+        base = _get_base_time(surface, distance, venue=h.venue,
+                              base_times_data=base_times_data)
 
         # 馬場補正
         cond_key = h.track_condition[:1] if h.track_condition else "良"
@@ -862,7 +876,8 @@ def load_model_config(path: str = None) -> dict:
         return default
 
 
-def calculate_scores(race: RaceInfo, model_config: dict = None) -> list[HorseScore]:
+def calculate_scores(race: RaceInfo, model_config: dict = None,
+                     base_times_data: dict = None) -> list[HorseScore]:
     """
     レースの全馬のスコアを計算する
 
@@ -939,7 +954,8 @@ def calculate_scores(race: RaceInfo, model_config: dict = None) -> list[HorseSco
             horse_name=entry.horse_name,
         )
 
-        hs.time_index = calc_time_index(entry.history)
+        hs.time_index = calc_time_index(entry.history,
+                                       base_times_data=base_times_data)
         hs.last_3f_index = calc_last_3f_index(entry.history)
         hs.stability_index = calc_stability_index(entry.history)
         hs.course_fitness = calc_course_fitness(
