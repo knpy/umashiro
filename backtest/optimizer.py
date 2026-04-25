@@ -1,10 +1,5 @@
 """Optuna によるスコアリング重みの最適化"""
 
-import sys
-from pathlib import Path
-
-sys.path.insert(0, str(Path(__file__).parent.parent))
-
 from backtest.database import HistoryDB
 from backtest.score_reconstructor import reconstruct_scores, get_actual_ranking
 from backtest.metrics import evaluate_race, aggregate_metrics

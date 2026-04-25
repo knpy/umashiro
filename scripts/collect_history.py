@@ -98,8 +98,15 @@ def main():
     errors = 0
     not_found = 0
     consecutive_404 = 0
+    skip_prefix = ""  # 連続404でスキップ中の prefix
 
     for i, race_id in enumerate(target_ids):
+        # 連続404スキップ中なら同じ prefix をスキップ
+        if skip_prefix and race_id.startswith(skip_prefix):
+            skipped += 1
+            continue
+        skip_prefix = ""
+
         venue_name = VENUE_CODES.get(race_id[4:6], "??")
         kai = int(race_id[6:8])
         day = int(race_id[8:10])
@@ -114,10 +121,8 @@ def main():
                 not_found += 1
                 consecutive_404 += 1
                 if consecutive_404 >= 36:
+                    # この回(YYYYJJKK)の残りをスキップ
                     skip_prefix = race_id[:8]
-                    while i + 1 < len(target_ids) and target_ids[i + 1].startswith(skip_prefix):
-                        i += 1
-                        skipped += 1
                     consecutive_404 = 0
                 continue
 

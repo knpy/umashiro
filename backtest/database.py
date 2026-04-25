@@ -1,5 +1,6 @@
 """過去レースデータを格納する SQLite データベース"""
 
+import json
 import sqlite3
 from pathlib import Path
 from contextlib import contextmanager
@@ -44,9 +45,10 @@ CREATE TABLE IF NOT EXISTS race_horses (
 CREATE TABLE IF NOT EXISTS payouts (
     race_id    TEXT NOT NULL,
     bet_type   TEXT NOT NULL,
+    seq        INTEGER NOT NULL DEFAULT 0,
     selections TEXT,
     payout     INTEGER,
-    PRIMARY KEY (race_id, bet_type),
+    PRIMARY KEY (race_id, bet_type, seq),
     FOREIGN KEY (race_id) REFERENCES races(race_id)
 );
 
@@ -62,31 +64,39 @@ CREATE INDEX IF NOT EXISTS idx_race_date
 
 
 class HistoryDB:
-    """過去レースデータの読み書きを行う SQLite ラッパー"""
+    """過去レースデータの読み書きを行う SQLite ラッパー
+
+    接続を保持して再利用する。Optuna の大量クエリでも効率的。
+    """
 
     def __init__(self, db_path=None):
         self.db_path = Path(db_path) if db_path else DEFAULT_DB_PATH
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
+        self._conn = None
         self._init_schema()
 
-    def _connect(self):
-        conn = sqlite3.connect(str(self.db_path))
-        conn.row_factory = sqlite3.Row
-        conn.execute("PRAGMA journal_mode=WAL")
-        conn.execute("PRAGMA synchronous=NORMAL")
-        return conn
+    def _get_conn(self):
+        if self._conn is None:
+            self._conn = sqlite3.connect(str(self.db_path))
+            self._conn.row_factory = sqlite3.Row
+            self._conn.execute("PRAGMA journal_mode=WAL")
+            self._conn.execute("PRAGMA synchronous=NORMAL")
+        return self._conn
 
     @contextmanager
     def _transaction(self):
-        conn = self._connect()
+        conn = self._get_conn()
         try:
             yield conn
             conn.commit()
         except Exception:
             conn.rollback()
             raise
-        finally:
-            conn.close()
+
+    def close(self):
+        if self._conn:
+            self._conn.close()
+            self._conn = None
 
     def _init_schema(self):
         with self._transaction() as conn:
@@ -146,17 +156,23 @@ class HistoryDB:
                 )
 
             for bet_type, info in race_data.get("payouts", {}).items():
-                conn.execute(
-                    """INSERT OR IGNORE INTO payouts
-                       (race_id, bet_type, selections, payout)
-                       VALUES (?, ?, ?, ?)""",
-                    (
-                        race_data["race_id"],
-                        bet_type,
-                        info.get("selections", ""),
-                        info.get("payout", 0),
-                    ),
-                )
+                if isinstance(info, list):
+                    for seq, item in enumerate(info):
+                        conn.execute(
+                            """INSERT OR IGNORE INTO payouts
+                               (race_id, bet_type, seq, selections, payout)
+                               VALUES (?, ?, ?, ?, ?)""",
+                            (race_data["race_id"], bet_type, seq,
+                             item.get("selections", ""), item.get("payout", 0)),
+                        )
+                else:
+                    conn.execute(
+                        """INSERT OR IGNORE INTO payouts
+                           (race_id, bet_type, seq, selections, payout)
+                           VALUES (?, ?, 0, ?, ?)""",
+                        (race_data["race_id"], bet_type,
+                         info.get("selections", ""), info.get("payout", 0)),
+                    )
 
     # =========================================================================
     # 読み出し: 疑似ヒストリー（最重要）
@@ -165,21 +181,18 @@ class HistoryDB:
     def get_horse_history(self, horse_id: str, before_date: str,
                          limit: int = 5) -> list[dict]:
         """指定日より前の出走記録を直近から返す。"""
-        conn = self._connect()
-        try:
-            rows = conn.execute(
-                """SELECT rh.*, r.date, r.venue, r.surface, r.distance,
-                          r.track_condition, r.head_count
-                   FROM race_horses rh
-                   JOIN races r ON rh.race_id = r.race_id
-                   WHERE rh.horse_id = ? AND r.date < ?
-                   ORDER BY r.date DESC
-                   LIMIT ?""",
-                (horse_id, before_date, limit),
-            ).fetchall()
-            return [dict(r) for r in rows]
-        finally:
-            conn.close()
+        conn = self._get_conn()
+        rows = conn.execute(
+            """SELECT rh.*, r.date, r.venue, r.surface, r.distance,
+                      r.track_condition, r.head_count
+               FROM race_horses rh
+               JOIN races r ON rh.race_id = r.race_id
+               WHERE rh.horse_id = ? AND r.date < ?
+               ORDER BY r.date DESC
+               LIMIT ?""",
+            (horse_id, before_date, limit),
+        ).fetchall()
+        return [dict(r) for r in rows]
 
     # =========================================================================
     # 読み出し: レースイテレーション
@@ -188,75 +201,68 @@ class HistoryDB:
     def iter_races(self, year: int = None, venue: str = None,
                    surface: str = None) -> list[dict]:
         """条件付きでレース一覧を返す"""
-        conn = self._connect()
-        try:
-            conditions = []
-            params = []
+        conn = self._get_conn()
+        conditions = []
+        params = []
 
-            if year:
-                conditions.append("r.date LIKE ?")
-                params.append(f"{year}-%")
-            if venue:
-                conditions.append("r.venue = ?")
-                params.append(venue)
-            if surface:
-                conditions.append("r.surface = ?")
-                params.append(surface)
+        if year:
+            conditions.append("r.date LIKE ?")
+            params.append(f"{year}-%")
+        if venue:
+            conditions.append("r.venue = ?")
+            params.append(venue)
+        if surface:
+            conditions.append("r.surface = ?")
+            params.append(surface)
 
-            where = f"WHERE {' AND '.join(conditions)}" if conditions else ""
+        where = f"WHERE {' AND '.join(conditions)}" if conditions else ""
 
-            races = conn.execute(
-                f"""SELECT r.*,
-                    (SELECT json_group_array(
-                        json_object(
-                            'horse_id', rh.horse_id,
-                            'horse_name', rh.horse_name,
-                            'horse_number', rh.horse_number,
-                            'frame_number', rh.frame_number,
-                            'finish_position', rh.finish_position,
-                            'time_str', rh.time_str,
-                            'time_sec', rh.time_sec,
-                            'last_3f', rh.last_3f,
-                            'passing', rh.passing,
-                            'odds', rh.odds,
-                            'popularity', rh.popularity,
-                            'jockey', rh.jockey,
-                            'weight_carried', rh.weight_carried,
-                            'horse_weight', rh.horse_weight
-                        )
-                    ) FROM race_horses rh WHERE rh.race_id = r.race_id
-                    ) as horses_json
-                    FROM races r {where}
-                    ORDER BY r.date, r.race_id""",
-                params,
-            ).fetchall()
+        races = conn.execute(
+            f"""SELECT r.*,
+                (SELECT json_group_array(
+                    json_object(
+                        'horse_id', rh.horse_id,
+                        'horse_name', rh.horse_name,
+                        'horse_number', rh.horse_number,
+                        'frame_number', rh.frame_number,
+                        'finish_position', rh.finish_position,
+                        'time_str', rh.time_str,
+                        'time_sec', rh.time_sec,
+                        'last_3f', rh.last_3f,
+                        'passing', rh.passing,
+                        'odds', rh.odds,
+                        'popularity', rh.popularity,
+                        'jockey', rh.jockey,
+                        'weight_carried', rh.weight_carried,
+                        'horse_weight', rh.horse_weight
+                    )
+                ) FROM race_horses rh WHERE rh.race_id = r.race_id
+                ) as horses_json
+                FROM races r {where}
+                ORDER BY r.date, r.race_id""",
+            params,
+        ).fetchall()
 
-            import json
-            result = []
-            for race in races:
-                d = dict(race)
-                d["horses"] = json.loads(d.pop("horses_json"))
-                result.append(d)
-            return result
-        finally:
-            conn.close()
+        result = []
+        for race in races:
+            d = dict(race)
+            d["horses"] = json.loads(d.pop("horses_json"))
+            result.append(d)
+        return result
 
     def iter_race_ids(self, year: int = None) -> list[str]:
         """収集済みの race_id 一覧を返す（高速）"""
-        conn = self._connect()
-        try:
-            if year:
-                rows = conn.execute(
-                    "SELECT race_id FROM races WHERE date LIKE ? ORDER BY race_id",
-                    (f"{year}-%",),
-                ).fetchall()
-            else:
-                rows = conn.execute(
-                    "SELECT race_id FROM races ORDER BY race_id"
-                ).fetchall()
-            return [r["race_id"] for r in rows]
-        finally:
-            conn.close()
+        conn = self._get_conn()
+        if year:
+            rows = conn.execute(
+                "SELECT race_id FROM races WHERE date LIKE ? ORDER BY race_id",
+                (f"{year}-%",),
+            ).fetchall()
+        else:
+            rows = conn.execute(
+                "SELECT race_id FROM races ORDER BY race_id"
+            ).fetchall()
+        return [r["race_id"] for r in rows]
 
     # =========================================================================
     # 読み出し: ベースタイム統計
@@ -264,24 +270,21 @@ class HistoryDB:
 
     def get_base_time_stats(self) -> list[dict]:
         """会場×馬場×距離×馬場状態ごとの勝ち馬タイム統計を返す"""
-        conn = self._connect()
-        try:
-            rows = conn.execute(
-                """SELECT r.venue, r.surface, r.distance, r.track_condition,
-                          COUNT(*) as sample_count,
-                          AVG(rh.time_sec) as avg_time,
-                          MIN(rh.time_sec) as min_time,
-                          MAX(rh.time_sec) as max_time
-                   FROM races r
-                   JOIN race_horses rh ON r.race_id = rh.race_id
-                   WHERE rh.finish_position = 1 AND rh.time_sec IS NOT NULL
-                   GROUP BY r.venue, r.surface, r.distance, r.track_condition
-                   HAVING COUNT(*) >= 3
-                   ORDER BY r.venue, r.surface, r.distance""",
-            ).fetchall()
-            return [dict(r) for r in rows]
-        finally:
-            conn.close()
+        conn = self._get_conn()
+        rows = conn.execute(
+            """SELECT r.venue, r.surface, r.distance, r.track_condition,
+                      COUNT(*) as sample_count,
+                      AVG(rh.time_sec) as avg_time,
+                      MIN(rh.time_sec) as min_time,
+                      MAX(rh.time_sec) as max_time
+               FROM races r
+               JOIN race_horses rh ON r.race_id = rh.race_id
+               WHERE rh.finish_position = 1 AND rh.time_sec IS NOT NULL
+               GROUP BY r.venue, r.surface, r.distance, r.track_condition
+               HAVING COUNT(*) >= 3
+               ORDER BY r.venue, r.surface, r.distance""",
+        ).fetchall()
+        return [dict(r) for r in rows]
 
     # =========================================================================
     # 読み出し: 払い戻し
@@ -289,68 +292,56 @@ class HistoryDB:
 
     def get_payouts(self, race_id: str) -> dict:
         """レースの払い戻し情報を返す"""
-        conn = self._connect()
-        try:
-            rows = conn.execute(
-                "SELECT bet_type, selections, payout FROM payouts WHERE race_id = ?",
-                (race_id,),
-            ).fetchall()
-            return {r["bet_type"]: {"selections": r["selections"], "payout": r["payout"]}
-                    for r in rows}
-        finally:
-            conn.close()
+        conn = self._get_conn()
+        rows = conn.execute(
+            "SELECT bet_type, selections, payout FROM payouts WHERE race_id = ?",
+            (race_id,),
+        ).fetchall()
+        return {r["bet_type"]: {"selections": r["selections"], "payout": r["payout"]}
+                for r in rows}
 
     # =========================================================================
     # ユーティリティ
     # =========================================================================
 
     def race_exists(self, race_id: str) -> bool:
-        conn = self._connect()
-        try:
-            row = conn.execute(
-                "SELECT 1 FROM races WHERE race_id = ?", (race_id,)
-            ).fetchone()
-            return row is not None
-        finally:
-            conn.close()
+        conn = self._get_conn()
+        row = conn.execute(
+            "SELECT 1 FROM races WHERE race_id = ?", (race_id,)
+        ).fetchone()
+        return row is not None
 
     def race_count(self, year: int = None) -> int:
-        conn = self._connect()
-        try:
-            if year:
-                row = conn.execute(
-                    "SELECT COUNT(*) as n FROM races WHERE date LIKE ?",
-                    (f"{year}-%",),
-                ).fetchone()
-            else:
-                row = conn.execute("SELECT COUNT(*) as n FROM races").fetchone()
-            return row["n"]
-        finally:
-            conn.close()
+        conn = self._get_conn()
+        if year:
+            row = conn.execute(
+                "SELECT COUNT(*) as n FROM races WHERE date LIKE ?",
+                (f"{year}-%",),
+            ).fetchone()
+        else:
+            row = conn.execute("SELECT COUNT(*) as n FROM races").fetchone()
+        return row["n"]
 
     def stats(self) -> dict:
-        conn = self._connect()
-        try:
-            race_n = conn.execute("SELECT COUNT(*) as n FROM races").fetchone()["n"]
-            horse_n = conn.execute(
-                "SELECT COUNT(DISTINCT horse_id) as n FROM race_horses"
-            ).fetchone()["n"]
-            entry_n = conn.execute("SELECT COUNT(*) as n FROM race_horses").fetchone()["n"]
-            date_range = conn.execute(
-                "SELECT MIN(date) as min_d, MAX(date) as max_d FROM races"
-            ).fetchone()
-            venues = conn.execute(
-                "SELECT venue, COUNT(*) as n FROM races GROUP BY venue ORDER BY n DESC"
-            ).fetchall()
-            return {
-                "total_races": race_n,
-                "unique_horses": horse_n,
-                "total_entries": entry_n,
-                "date_range": {
-                    "from": date_range["min_d"],
-                    "to": date_range["max_d"],
-                } if date_range["min_d"] else None,
-                "venues": {r["venue"]: r["n"] for r in venues},
-            }
-        finally:
-            conn.close()
+        conn = self._get_conn()
+        race_n = conn.execute("SELECT COUNT(*) as n FROM races").fetchone()["n"]
+        horse_n = conn.execute(
+            "SELECT COUNT(DISTINCT horse_id) as n FROM race_horses"
+        ).fetchone()["n"]
+        entry_n = conn.execute("SELECT COUNT(*) as n FROM race_horses").fetchone()["n"]
+        date_range = conn.execute(
+            "SELECT MIN(date) as min_d, MAX(date) as max_d FROM races"
+        ).fetchone()
+        venues = conn.execute(
+            "SELECT venue, COUNT(*) as n FROM races GROUP BY venue ORDER BY n DESC"
+        ).fetchall()
+        return {
+            "total_races": race_n,
+            "unique_horses": horse_n,
+            "total_entries": entry_n,
+            "date_range": {
+                "from": date_range["min_d"],
+                "to": date_range["max_d"],
+            } if date_range["min_d"] else None,
+            "venues": {r["venue"]: r["n"] for r in venues},
+        }

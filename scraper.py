@@ -508,13 +508,19 @@ class NetkeibaScraper:
             weight_carried, horse_weight = "", ""
 
             for t in all_text:
-                if re.match(r"^\d+\.\d+$", t) and odds_val is None:
-                    odds_val = float(t)
                 if re.match(r"^\d:\d\d\.\d$", t):
                     time_str = t
                     parts = t.split(":")
                     sec_parts = parts[1].split(".")
                     time_sec = int(parts[0]) * 60 + int(sec_parts[0]) + int(sec_parts[1]) * 0.1
+
+            # オッズは後半の列から探す（前半の斤量 56.0 等との誤検知を防ぐ）
+            for t in reversed(all_text):
+                if re.match(r"^\d+\.\d+$", t):
+                    val = float(t)
+                    if val >= 1.0 and val < 1000.0:
+                        odds_val = val
+                        break
 
             for td in tds[-10:]:
                 t = td.get_text(strip=True)

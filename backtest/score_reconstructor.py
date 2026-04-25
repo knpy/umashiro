@@ -1,10 +1,5 @@
 """過去レースデータからスコアを再構築する"""
 
-import sys
-from pathlib import Path
-
-sys.path.insert(0, str(Path(__file__).parent.parent))
-
 from scraper import RaceInfo, HorseEntry, HorseResult
 from predictor import calculate_scores, HorseScore
 from backtest.database import HistoryDB

@@ -1,15 +1,11 @@
 """BET/PASS 閾値のバックテスト"""
 
-import sys
-from pathlib import Path
 from itertools import product
-
-sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from backtest.database import HistoryDB
 from backtest.score_reconstructor import reconstruct_scores, build_pseudo_entries
+from backtest.bet_utils import check_bet_result
 from strategy import StrategyConfig, decide
-from scripts.run_collect import check_bet_result
 
 
 def simulate_strategy(db, races, config, model_config=None, base_times_data=None):
