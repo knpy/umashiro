@@ -954,13 +954,19 @@ def calculate_scores(race: RaceInfo, model_config: dict = None) -> list[HorseSco
         # クラス昇級初戦の補正:
         # 下位クラスでの安定性・好調子がそのまま通用するとは限らない
         is_upgrade = _detect_class_upgrade(entry.history, race.race_name)
-        if is_upgrade:
-            hs.stability_index = hs.stability_index * 0.7 + 50.0 * 0.3  # 50点方向に30%寄せる
-            hs.form_cycle = hs.form_cycle * 0.7 + 50.0 * 0.3
-
         # 芝/ダート転向検出
         surface_switch = _detect_surface_switch(entry.history, target_surface)
-        if surface_switch:
+
+        # 昇級・転向の補正（2重適用を防止: stability_indexは1回のみ補正）
+        if is_upgrade and surface_switch:
+            # 両方該当: 最も厳しい補正を1回だけ適用
+            hs.stability_index = hs.stability_index * 0.7 + 50.0 * 0.3
+            hs.form_cycle = hs.form_cycle * 0.7 + 50.0 * 0.3
+            hs.time_index = hs.time_index * 0.7 + 50.0 * 0.3
+        elif is_upgrade:
+            hs.stability_index = hs.stability_index * 0.7 + 50.0 * 0.3  # 50点方向に30%寄せる
+            hs.form_cycle = hs.form_cycle * 0.7 + 50.0 * 0.3
+        elif surface_switch:
             # 転向馬は未知数 → 安定性・タイム指数を50点方向に30%寄せる
             hs.stability_index = hs.stability_index * 0.7 + 50.0 * 0.3
             hs.time_index = hs.time_index * 0.7 + 50.0 * 0.3
