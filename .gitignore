@@ -199,6 +199,9 @@ data/ledger.json
 data/predictions/
 data/results/
 data/bets/
+data/history.db
+data/history.db-wal
+data/history.db-shm
 
 # Track these (no sensitive data)
 !models/

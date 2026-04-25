@@ -416,6 +416,173 @@ class NetkeibaScraper:
         return {}
 
     # =========================================================================
+    # レース結果取得（バックテスト用）
+    # =========================================================================
+    RESULT_URL = "https://race.netkeiba.com/race/result.html"
+
+    def get_race_result(self, race_id: str) -> Optional[dict]:
+        """レース結果ページから構造化データを取得する。存在しないレースは None。"""
+        if not re.match(r'^[a-zA-Z0-9]+$', race_id):
+            return None
+        try:
+            soup = self._get(self.RESULT_URL, {"race_id": race_id})
+        except Exception:
+            return None
+
+        horse_rows = soup.select(".HorseList")
+        if not horse_rows:
+            return None
+
+        venue_code_map = {
+            "01": "札幌", "02": "函館", "03": "福島", "04": "新潟",
+            "05": "東京", "06": "中山", "07": "中京", "08": "京都",
+            "09": "阪神", "10": "小倉",
+        }
+        venue = venue_code_map.get(race_id[4:6], "") if len(race_id) >= 6 else ""
+
+        race_name = ""
+        el = soup.select_one(".RaceName")
+        if el:
+            race_name = el.get_text(strip=True)
+
+        race_number = 0
+        el = soup.select_one(".RaceNum")
+        if el:
+            m = re.search(r"(\d+)", el.get_text(strip=True))
+            if m:
+                race_number = int(m.group(1))
+
+        surface, distance, track_condition = "", 0, ""
+        el = soup.select_one(".RaceData01")
+        if el:
+            text = el.get_text(" ", strip=True)
+            m = re.search(r"(芝|ダ).*?(\d{4})", text)
+            if m:
+                surface = m.group(1)
+                distance = int(m.group(2))
+
+        el = soup.select_one(".RaceData02")
+        if el:
+            m = re.search(r"(良|稍重|重|不良)", el.get_text(" ", strip=True))
+            if m:
+                track_condition = m.group(1)
+
+        date_str = ""
+        header_text = soup.get_text()
+        m = re.search(r"(\d{4})年(\d{1,2})月(\d{1,2})日", header_text)
+        if m:
+            date_str = f"{m.group(1)}-{int(m.group(2)):02d}-{int(m.group(3)):02d}"
+
+        horses = []
+        for row in horse_rows:
+            tds = row.select("td")
+            if len(tds) < 10:
+                continue
+
+            rank_text = tds[0].get_text(strip=True)
+            rank_m = re.search(r"\d+", rank_text)
+            finish_position = int(rank_m.group()) if rank_m else 0
+
+            frame_el = row.select_one("td[class*='Waku']")
+            frame_number = frame_el.get_text(strip=True) if frame_el else ""
+
+            umaban_el = row.select_one("td[class*='Umaban']")
+            horse_number = umaban_el.get_text(strip=True) if umaban_el else ""
+
+            horse_name, horse_id = "", ""
+            horse_el = row.select_one(".HorseInfo a, .HorseName a, .Horse_Name a")
+            if horse_el:
+                horse_name = horse_el.get_text(strip=True)
+                href = horse_el.get("href", "")
+                hid_m = re.search(r"/horse/(\w+)", href)
+                if hid_m:
+                    horse_id = hid_m.group(1)
+
+            jockey = ""
+            jockey_el = row.select_one(".Jockey a")
+            if jockey_el:
+                jockey = jockey_el.get_text(strip=True)
+
+            all_text = [td.get_text(strip=True) for td in tds]
+            odds_val, time_str, time_sec, last_3f = None, "", None, None
+            weight_carried, horse_weight = "", ""
+
+            for t in all_text:
+                if re.match(r"^\d:\d\d\.\d$", t):
+                    time_str = t
+                    parts = t.split(":")
+                    sec_parts = parts[1].split(".")
+                    time_sec = int(parts[0]) * 60 + int(sec_parts[0]) + int(sec_parts[1]) * 0.1
+
+            # オッズは後半の列から探す（前半の斤量 56.0 等との誤検知を防ぐ）
+            for t in reversed(all_text):
+                if re.match(r"^\d+\.\d+$", t):
+                    val = float(t)
+                    if val >= 1.0 and val < 1000.0:
+                        odds_val = val
+                        break
+
+            for td in tds[-10:]:
+                t = td.get_text(strip=True)
+                if re.match(r"^3\d\.\d$", t):
+                    last_3f = float(t)
+                    break
+
+            passing = ""
+            for td in tds:
+                t = td.get_text(strip=True)
+                if re.match(r"^\d+-\d+", t):
+                    passing = t
+                    break
+
+            weight_el = row.select_one("td.Weight, .Weight")
+            if weight_el:
+                horse_weight = weight_el.get_text(strip=True)
+
+            pop_el = row.select_one(".Popular_Ninki, .OddsPeople")
+            popularity = None
+            if pop_el:
+                pop_m = re.search(r"(\d+)", pop_el.get_text(strip=True))
+                if pop_m:
+                    popularity = int(pop_m.group(1))
+
+            horses.append({
+                "horse_id": horse_id, "horse_name": horse_name,
+                "horse_number": horse_number, "frame_number": frame_number,
+                "finish_position": finish_position, "time_str": time_str,
+                "time_sec": time_sec, "last_3f": last_3f, "passing": passing,
+                "odds": odds_val, "popularity": popularity, "jockey": jockey,
+                "weight_carried": weight_carried, "horse_weight": horse_weight,
+            })
+
+        if not horses:
+            return None
+
+        payouts = {}
+        for table in soup.select("table"):
+            text = table.get_text(strip=True)
+            if "単勝" not in text and "馬連" not in text and "三連" not in text:
+                continue
+            for tr in table.select("tr"):
+                cells = tr.select("th, td")
+                if len(cells) >= 3:
+                    bt = cells[0].get_text(strip=True)
+                    sel = cells[1].get_text(strip=True)
+                    pt = cells[2].get_text(strip=True)
+                    pm = re.search(r"([\d,]+)円", pt)
+                    if pm and bt in ("単勝", "複勝", "馬連", "馬単", "ワイド", "3連複", "3連単"):
+                        normalized = bt.replace("3連複", "三連複").replace("3連単", "三連単")
+                        payouts[normalized] = {"selections": sel, "payout": int(pm.group(1).replace(",", ""))}
+
+        return {
+            "race_id": race_id, "date": date_str, "venue": venue,
+            "race_name": race_name, "race_number": race_number,
+            "surface": surface, "distance": distance,
+            "track_condition": track_condition, "head_count": len(horses),
+            "horses": horses, "payouts": payouts,
+        }
+
+    # =========================================================================
     # まとめて取得
     # =========================================================================
     def fetch_full_race_data(self, race_id: str, history_limit: int = 5,
