@@ -75,12 +75,21 @@ def _safe_int(s: str) -> int:
 class NetkeibaScraper:
     RACE_LIST_URL = "https://race.netkeiba.com/top/race_list.html"
     SHUTUBA_URL = "https://race.netkeiba.com/race/shutuba.html"
+    SHUTUBA_SP_URL = "https://race.sp.netkeiba.com/race/shutuba.html"
+    ODDS_SP_API_URL = "https://race.sp.netkeiba.com/"
     HORSE_URL = "https://db.netkeiba.com/horse"
 
     HEADERS = {
         "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
                       "AppleWebKit/537.36 (KHTML, like Gecko) "
                       "Chrome/120.0.0.0 Safari/537.36",
+        "Accept-Language": "ja,en;q=0.9",
+    }
+
+    SP_HEADERS = {
+        "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) "
+                      "AppleWebKit/605.1.15 (KHTML, like Gecko) "
+                      "Version/17.0 Mobile/15E148 Safari/604.1",
         "Accept-Language": "ja,en;q=0.9",
     }
 
@@ -97,6 +106,16 @@ class NetkeibaScraper:
             resp.encoding = encoding
         else:
             resp.encoding = "euc-jp"
+        return BeautifulSoup(resp.text, "html.parser")
+
+    def _get_sp(self, url: str, params: dict = None) -> BeautifulSoup:
+        """SP版(スマホ版)にアクセスする"""
+        time.sleep(self.delay)
+        resp = self.session.get(
+            url, params=params, timeout=30,
+            headers=self.SP_HEADERS,
+        )
+        resp.encoding = "utf-8"
         return BeautifulSoup(resp.text, "html.parser")
 
     # =========================================================================
@@ -165,43 +184,43 @@ class NetkeibaScraper:
     # 出馬表取得
     # =========================================================================
     def get_race_entries(self, race_id: str) -> RaceInfo:
-        """出馬表ページからレース情報と全馬のエントリーを取得"""
+        """出馬表ページからレース情報と全馬のエントリーを取得
+
+        PC版を試し、取得できない場合はSP版にフォールバックする。
+        """
         soup = self._get(self.SHUTUBA_URL, {"race_id": race_id})
+        rows = soup.select(".HorseList")
 
+        if rows:
+            return self._parse_pc_shutuba(soup, rows, race_id)
+
+        # PC版が取得できない場合、SP版にフォールバック
+        soup = self._get_sp(self.SHUTUBA_SP_URL, {"race_id": race_id})
+        rows = soup.select(".HorseList")
+        return self._parse_sp_shutuba(soup, rows, race_id)
+
+    def _parse_pc_shutuba(self, soup, rows, race_id: str) -> RaceInfo:
+        """PC版出馬表をパースする"""
         info = RaceInfo(race_id=race_id)
+        info.venue = self._venue_from_race_id(race_id)
 
-        # 会場名をrace_idから特定
-        venue_code_map = {
-            "01": "札幌", "02": "函館", "03": "福島", "04": "新潟",
-            "05": "東京", "06": "中山", "07": "中京", "08": "京都",
-            "09": "阪神", "10": "小倉",
-        }
-        if len(race_id) >= 6:
-            info.venue = venue_code_map.get(race_id[4:6], "")
-
-        # レース名
         race_name_el = soup.select_one(".RaceName")
         if race_name_el:
             info.race_name = race_name_el.get_text(strip=True)
 
-        # レース番号
         race_num_el = soup.select_one(".RaceNum")
         if race_num_el:
             num_text = re.search(r"(\d+)", race_num_el.get_text(strip=True))
             info.race_number = int(num_text.group(1)) if num_text else 0
 
-        # コース情報 (距離・馬場種別)
         race_data1 = soup.select_one(".RaceData01")
         if race_data1:
             info.course_info = race_data1.get_text(" ", strip=True)
 
-        # 発走時刻
         time_el = soup.select_one(".RaceData01 span")
         if time_el:
             info.start_time = time_el.get_text(strip=True)
 
-        # 出馬表テーブル
-        rows = soup.select(".HorseList")
         for row in rows:
             entry = self._parse_entry_row(row)
             if entry and entry.horse_name:
@@ -209,6 +228,102 @@ class NetkeibaScraper:
 
         info.head_count = len(info.entries)
         return info
+
+    def _parse_sp_shutuba(self, soup, rows, race_id: str) -> RaceInfo:
+        """SP版出馬表をパースする"""
+        info = RaceInfo(race_id=race_id)
+        info.venue = self._venue_from_race_id(race_id)
+
+        # SP版のレース名・番号・コース情報
+        race_name_el = soup.select_one(".Race_Name")
+        if race_name_el:
+            info.race_name = race_name_el.get_text(strip=True)
+
+        race_num_el = soup.select_one(".RaceList_Item01")
+        if race_num_el:
+            num_text = re.search(r"(\d+)", race_num_el.get_text(strip=True))
+            info.race_number = int(num_text.group(1)) if num_text else 0
+
+        race_data_el = soup.select_one(".RaceList_Item02")
+        if race_data_el:
+            info.course_info = race_data_el.get_text(" ", strip=True)
+
+        for row in rows:
+            entry = self._parse_entry_row_sp(row)
+            if entry and entry.horse_name:
+                info.entries.append(entry)
+
+        info.head_count = len(info.entries)
+        return info
+
+    def _venue_from_race_id(self, race_id: str) -> str:
+        venue_code_map = {
+            "01": "札幌", "02": "函館", "03": "福島", "04": "新潟",
+            "05": "東京", "06": "中山", "07": "中京", "08": "京都",
+            "09": "阪神", "10": "小倉",
+        }
+        if len(race_id) >= 6:
+            return venue_code_map.get(race_id[4:6], "")
+        return ""
+
+    def _parse_entry_row_sp(self, row) -> Optional[HorseEntry]:
+        """SP版出馬表の1行をパースする"""
+        entry = HorseEntry()
+
+        # 枠番 - td.Waku* のテキスト
+        frame_el = row.select_one("td[class*='Waku']")
+        if frame_el:
+            entry.frame_number = frame_el.get_text(strip=True)
+
+        # 馬番 - input[value] の "_" 前が馬番 (例: "1_98" → 馬番1)
+        input_el = row.select_one(".Horse_Select input[name]")
+        if input_el:
+            value = input_el.get("value", "")
+            if "_" in value:
+                entry.horse_number = value.split("_")[0]
+            else:
+                entry.horse_number = input_el.get("name", "")
+
+        # 馬名 - .Horse a or .HorseLink a
+        horse_el = row.select_one(".Horse a, .HorseLink a")
+        if horse_el:
+            entry.horse_name = horse_el.get_text(strip=True)
+            href = horse_el.get("href", "")
+            horse_id_match = re.search(r"horse_id=(\w+)", href)
+            if horse_id_match:
+                entry.horse_id = horse_id_match.group(1)
+
+        # 性齢 - .Age
+        age_el = row.select_one(".Age")
+        if age_el:
+            # 最初のテキストノードだけ (例: "牝4")
+            age_text = age_el.get_text(strip=True)
+            sex_age_m = re.match(r"([牡牝セ]\d+)", age_text)
+            if sex_age_m:
+                entry.sex_age = sex_age_m.group(1)
+
+        # 騎手・斤量 - .Jockey a (テキストが "騎手名 斤量")
+        jockey_el = row.select_one(".Jockey a")
+        if jockey_el:
+            jockey_text = jockey_el.get_text(strip=True)
+            # "騎手名54.0" → 分離
+            wt_m = re.search(r"(\d+\.?\d*)$", jockey_text)
+            if wt_m:
+                entry.weight_carried = wt_m.group(1)
+                entry.jockey = jockey_text[:wt_m.start()]
+            else:
+                entry.jockey = jockey_text
+            href = jockey_el.get("href", "")
+            jid = re.search(r"/jockey/(?:result/recent/)?(\w+)", href)
+            if jid:
+                entry.jockey_id = jid.group(1)
+
+        # 馬体重
+        weight_el = row.select_one("td.Weight, .Weight")
+        if weight_el:
+            entry.horse_weight = weight_el.get_text(strip=True)
+
+        return entry
 
     def _parse_entry_row(self, row) -> Optional[HorseEntry]:
         """出馬表の1行をパースする"""
@@ -289,6 +404,72 @@ class NetkeibaScraper:
             entry.horse_weight = weight_el.get_text(strip=True)
 
         return entry
+
+    # =========================================================================
+    # オッズ取得 (SP版APIを使用)
+    # =========================================================================
+    def get_odds(self, race_id: str) -> dict:
+        """SP版APIから単勝オッズと人気を取得する
+
+        Returns:
+            {馬番(str): {"odds": str, "popularity": str}, ...}
+        """
+        import json as _json
+        time.sleep(self.delay)
+        resp = self.session.get(
+            self.ODDS_SP_API_URL,
+            params={
+                "pid": "api_get_jra_odds",
+                "race_id": race_id,
+                "type": "1",
+                "output": "json",
+            },
+            headers=self.SP_HEADERS,
+            timeout=30,
+        )
+        result = {}
+        if resp.status_code != 200:
+            return result
+        try:
+            data = _json.loads(resp.text)
+        except _json.JSONDecodeError:
+            return result
+
+        if data.get("status") != "result":
+            return result
+
+        # data.data.odds.1 = 単勝: {馬番: [オッズ, 前回オッズ, 人気], ...}
+        tan_odds = data.get("data", {}).get("odds", {}).get("1", {})
+        for umaban, values in tan_odds.items():
+            if isinstance(values, list) and len(values) >= 3:
+                odds_val = values[0]  # "3.9"
+                pop_val = values[2]   # "1"
+                if re.search(r"\d+\.\d+", str(odds_val)):
+                    result[umaban] = {
+                        "odds": str(odds_val),
+                        "popularity": str(pop_val),
+                    }
+        return result
+
+    def inject_odds(self, race_info: 'RaceInfo') -> None:
+        """RaceInfoのエントリーにオッズと人気を注入する"""
+        if not race_info.entries:
+            return
+        # 既にオッズが入っている場合はスキップ
+        if any(e.odds for e in race_info.entries):
+            return
+        odds_data = self.get_odds(race_info.race_id)
+        if not odds_data:
+            return
+        for entry in race_info.entries:
+            # APIキーはゼロパディング("01")、エントリーは("1")の場合がある
+            key = entry.horse_number.zfill(2)
+            if key not in odds_data:
+                key = entry.horse_number  # パディングなしでも試す
+            if key in odds_data:
+                entry.odds = odds_data[key]["odds"]
+                if not entry.popularity:
+                    entry.popularity = odds_data[key]["popularity"]
 
     # =========================================================================
     # 馬の過去成績取得 (SP版を使用 - PC版はJS動的読み込みのため)

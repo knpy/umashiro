@@ -27,21 +27,39 @@ from backtest.bet_utils import check_bet_result
 
 
 def fetch_result(scraper, race_id):
-    """レース結果と払い戻しをスクレイピング"""
-    import requests
+    """レース結果と払い戻しをスクレイピング（PC版 → SP版フォールバック）"""
     from bs4 import BeautifulSoup
 
+    # PC版を試す
     resp = scraper.session.get(
         "https://race.netkeiba.com/race/result.html",
         params={"race_id": race_id},
         timeout=30,
     )
-    resp.encoding = "euc-jp"
-    soup = BeautifulSoup(resp.text, "html.parser")
+    if resp.status_code == 200 and resp.text.strip():
+        resp.encoding = "euc-jp"
+        soup = BeautifulSoup(resp.text, "html.parser")
+        rows = soup.select(".HorseList")
+        if rows:
+            return _parse_result_pc(soup, rows)
 
-    # 着順テーブル
+    # SP版にフォールバック
+    resp = scraper.session.get(
+        "https://race.sp.netkeiba.com/",
+        params={"pid": "race_result", "race_id": race_id},
+        headers=scraper.SP_HEADERS,
+        timeout=30,
+    )
+    if resp.status_code != 200:
+        return [], {}
+    resp.encoding = "utf-8"
+    soup = BeautifulSoup(resp.text, "html.parser")
+    return _parse_result_sp(soup)
+
+
+def _parse_result_pc(soup, rows):
+    """PC版の結果ページをパースする"""
     finishing_order = []
-    rows = soup.select(".HorseList")
     for row in rows:
         tds = row.select("td")
         if len(tds) < 10:
@@ -56,10 +74,7 @@ def fetch_result(scraper, race_id):
         horse_el = row.select_one(".HorseInfo a, .HorseName a, .Horse_Name a")
         horse_name = horse_el.get_text(strip=True) if horse_el else ""
 
-        # 全テキストから人気・オッズ・タイムを取得
         all_text = [td.get_text(strip=True) for td in tds]
-
-        # 人気とオッズを探す
         pop, odds, time_str = 0, 0.0, ""
         for t in all_text:
             odds_m = re.match(r"(\d+\.\d+)$", t)
@@ -70,15 +85,16 @@ def fetch_result(scraper, race_id):
                 time_str = t
 
         finishing_order.append({
-            "rank": rank,
-            "num": umaban,
-            "name": horse_name,
-            "pop": 0,  # 後で解析
-            "odds": odds,
-            "time": time_str,
+            "rank": rank, "num": umaban, "name": horse_name,
+            "pop": 0, "odds": odds, "time": time_str,
         })
 
-    # 払い戻し
+    payouts = _parse_payouts_pc(soup)
+    return finishing_order, payouts
+
+
+def _parse_payouts_pc(soup):
+    """PC版の払い戻しテーブルをパースする"""
     payouts = {}
     for table in soup.select("table"):
         text = table.get_text(strip=True)
@@ -98,8 +114,69 @@ def fetch_result(scraper, race_id):
                         "selections": selections,
                         "payout": payout_val,
                     }
+    return payouts
 
+
+def _parse_result_sp(soup):
+    """SP版の結果ページをパースする"""
+    finishing_order = []
+    # .Rank を持つ tr が結果行
+    for row in soup.select("tr"):
+        rank_el = row.select_one(".Rank")
+        if not rank_el:
+            continue
+        rank_text = rank_el.get_text(strip=True)
+        rank_m = re.search(r"(\d+)", rank_text)
+        rank = int(rank_m.group(1)) if rank_m else 0
+
+        nums = row.select("td.Num")
+        umaban = nums[1].get_text(strip=True) if len(nums) >= 2 else ""
+
+        horse_el = row.select_one(".Horse_Name a")
+        horse_name = horse_el.get_text(strip=True) if horse_el else ""
+
+        odds_el = row.select_one("td.Odds")
+        odds = 0.0
+        if odds_el:
+            odds_m = re.search(r"(\d+\.\d+)", odds_el.get_text(strip=True))
+            if odds_m:
+                odds = float(odds_m.group(1))
+
+        time_el = row.select_one("td.Time")
+        time_str = ""
+        if time_el:
+            time_m = re.search(r"(\d:\d\d\.\d)", time_el.get_text(strip=True))
+            if time_m:
+                time_str = time_m.group(1)
+
+        finishing_order.append({
+            "rank": rank, "num": umaban, "name": horse_name,
+            "pop": 0, "odds": odds, "time": time_str,
+        })
+
+    payouts = _parse_payouts_sp(soup)
     return finishing_order, payouts
+
+
+def _parse_payouts_sp(soup):
+    """SP版の払い戻しテーブルをパースする"""
+    payouts = {}
+    for tr in soup.select("tr"):
+        cells = tr.select("th, td")
+        if len(cells) >= 3:
+            bet_type = cells[0].get_text(strip=True)
+            payout_text = cells[2].get_text(strip=True)
+            selections = cells[1].get_text(strip=True)
+            payout_m = re.search(r"([\d,]+)円", payout_text)
+            if payout_m and bet_type in ("単勝", "複勝", "馬連", "馬単", "ワイド", "3連複", "3連単",
+                                          "三連複", "三連単"):
+                normalized_type = bet_type.replace("3連複", "三連複").replace("3連単", "三連単")
+                payout_val = int(payout_m.group(1).replace(",", ""))
+                payouts[normalized_type] = {
+                    "selections": selections,
+                    "payout": payout_val,
+                }
+    return payouts
 
 
 def main():

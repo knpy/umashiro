@@ -26,18 +26,9 @@ from bankroll import format_status, calc_position_size
 
 
 def find_race_ids(scraper, date, venue_filter=""):
-    """指定日のレース一覧をrace_list_subから取得"""
-    import requests
+    """指定日のレース一覧を取得（PC版 → SP版フォールバック）"""
     from bs4 import BeautifulSoup
     import re
-
-    resp = scraper.session.get(
-        "https://race.netkeiba.com/top/race_list_sub.html",
-        params={"kaisai_date": date},
-        timeout=30,
-    )
-    resp.encoding = "euc-jp"
-    soup = BeautifulSoup(resp.text, "html.parser")
 
     venue_codes = {
         "札幌": "01", "函館": "02", "福島": "03", "新潟": "04",
@@ -45,6 +36,26 @@ def find_race_ids(scraper, date, venue_filter=""):
         "阪神": "09", "小倉": "10",
     }
     venue_code = venue_codes.get(venue_filter, "")
+
+    # PC版を試す
+    resp = scraper.session.get(
+        "https://race.netkeiba.com/top/race_list_sub.html",
+        params={"kaisai_date": date},
+        timeout=30,
+    )
+    if resp.status_code == 200 and resp.text.strip():
+        resp.encoding = "euc-jp"
+        soup = BeautifulSoup(resp.text, "html.parser")
+    else:
+        # SP版トップからレース一覧を取得
+        resp = scraper.session.get(
+            "https://race.sp.netkeiba.com/",
+            params={"kaisai_date": date},
+            headers=scraper.SP_HEADERS,
+            timeout=30,
+        )
+        resp.encoding = "utf-8"
+        soup = BeautifulSoup(resp.text, "html.parser")
 
     races = []
     for link in soup.find_all("a", href=True):
@@ -77,20 +88,15 @@ def find_race_ids(scraper, date, venue_filter=""):
     return sorted(races, key=lambda r: r["race_id"])
 
 
-def inject_odds_from_shutuba(scraper, race):
-    """出馬表ページからオッズを取得して注入（スクレイパーで取れない場合の補完）"""
-    # scraper.get_race_entries で既にオッズが入っている場合はスキップ
-    has_odds = any(e.odds for e in race.entries)
-    if has_odds:
-        return
-
-
 def run_prediction(scraper, race_id, date, model_config, model_name):
     """1レースの予想を実行"""
     # 出馬表取得
     race = scraper.get_race_entries(race_id)
     if not race.entries:
         return None
+
+    # オッズ取得（SP版APIから補完）
+    scraper.inject_odds(race)
 
     # 過去成績取得
     for entry in race.entries:
