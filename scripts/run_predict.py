@@ -134,6 +134,19 @@ def run_prediction(scraper, race_id, date, model_config, model_name):
                 "score": round(s.total_score, 1),
                 "ev": round(s.expected_value, 2),
                 "style": s.running_style,
+                "factors": {
+                    "time_index": round(s.time_index, 1),
+                    "last_3f_index": round(s.last_3f_index, 1),
+                    "stability_index": round(s.stability_index, 1),
+                    "course_fitness": round(s.course_fitness, 1),
+                    "pace_advantage": round(s.pace_advantage, 1),
+                    "form_cycle": round(s.form_cycle, 1),
+                    "weight_score": round(s.weight_score, 1),
+                    "class_score": round(s.class_score, 1),
+                    "rest_days_score": round(s.rest_days_score, 1),
+                    "gate_bias_score": round(s.gate_bias_score, 1),
+                    "jockey_score": round(s.jockey_score, 1),
+                },
             }
             for i, s in enumerate(scores)
         ],
