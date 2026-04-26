@@ -1,0 +1,1065 @@
+{
+  "date": "2026-04-26",
+  "year": 2025,
+  "current_settings": {
+    "total_races": 716,
+    "bet_races": 0,
+    "pass_races": 716,
+    "total_invested": 0,
+    "total_returned": 0,
+    "profit": 0,
+    "roi": 0.0,
+    "hit_rate": 0.0,
+    "total_bets": 0,
+    "bet_type_breakdown": {},
+    "config": {
+      "min_confidence": "B",
+      "min_primary_ev": 1.3,
+      "min_top3_ev": 1.3,
+      "score_diff_1_2_for_A": 5.0,
+      "score_diff_1_3_for_B": 5.0
+    }
+  },
+  "top_results": [
+    {
+      "total_races": 716,
+      "bet_races": 31,
+      "pass_races": 685,
+      "total_invested": 544400,
+      "total_returned": 711820,
+      "profit": 167420,
+      "roi": 0.30753122703894187,
+      "hit_rate": 0.029411764705882353,
+      "total_bets": 170,
+      "bet_type_breakdown": {
+        "単勝": {
+          "count": 31,
+          "invested": 211400,
+          "returned": 235900,
+          "hits": 3,
+          "roi": 0.11589403973509937,
+          "hit_rate": 0.0967741935483871
+        },
+        "馬連": {
+          "count": 47,
+          "invested": 160800,
+          "returned": 475920,
+          "hits": 1,
+          "roi": 1.9597014925373135,
+          "hit_rate": 0.02127659574468085
+        },
+        "ワイド": {
+          "count": 32,
+          "invested": 72600,
+          "returned": 0,
+          "hits": 1,
+          "roi": -1.0,
+          "hit_rate": 0.03125
+        },
+        "三連複": {
+          "count": 60,
+          "invested": 99600,
+          "returned": 0,
+          "hits": 0,
+          "roi": -1.0,
+          "hit_rate": 0.0
+        }
+      },
+      "config": {
+        "min_confidence": "A",
+        "min_primary_ev": 0.8,
+        "min_top3_ev": 1.0,
+        "score_diff_1_2_for_A": 7.0,
+        "score_diff_1_3_for_B": 3.0
+      }
+    },
+    {
+      "total_races": 716,
+      "bet_races": 31,
+      "pass_races": 685,
+      "total_invested": 544400,
+      "total_returned": 711820,
+      "profit": 167420,
+      "roi": 0.30753122703894187,
+      "hit_rate": 0.029411764705882353,
+      "total_bets": 170,
+      "bet_type_breakdown": {
+        "単勝": {
+          "count": 31,
+          "invested": 211400,
+          "returned": 235900,
+          "hits": 3,
+          "roi": 0.11589403973509937,
+          "hit_rate": 0.0967741935483871
+        },
+        "馬連": {
+          "count": 47,
+          "invested": 160800,
+          "returned": 475920,
+          "hits": 1,
+          "roi": 1.9597014925373135,
+          "hit_rate": 0.02127659574468085
+        },
+        "ワイド": {
+          "count": 32,
+          "invested": 72600,
+          "returned": 0,
+          "hits": 1,
+          "roi": -1.0,
+          "hit_rate": 0.03125
+        },
+        "三連複": {
+          "count": 60,
+          "invested": 99600,
+          "returned": 0,
+          "hits": 0,
+          "roi": -1.0,
+          "hit_rate": 0.0
+        }
+      },
+      "config": {
+        "min_confidence": "A",
+        "min_primary_ev": 0.8,
+        "min_top3_ev": 1.0,
+        "score_diff_1_2_for_A": 7.0,
+        "score_diff_1_3_for_B": 5.0
+      }
+    },
+    {
+      "total_races": 716,
+      "bet_races": 31,
+      "pass_races": 685,
+      "total_invested": 544400,
+      "total_returned": 711820,
+      "profit": 167420,
+      "roi": 0.30753122703894187,
+      "hit_rate": 0.029411764705882353,
+      "total_bets": 170,
+      "bet_type_breakdown": {
+        "単勝": {
+          "count": 31,
+          "invested": 211400,
+          "returned": 235900,
+          "hits": 3,
+          "roi": 0.11589403973509937,
+          "hit_rate": 0.0967741935483871
+        },
+        "馬連": {
+          "count": 47,
+          "invested": 160800,
+          "returned": 475920,
+          "hits": 1,
+          "roi": 1.9597014925373135,
+          "hit_rate": 0.02127659574468085
+        },
+        "ワイド": {
+          "count": 32,
+          "invested": 72600,
+          "returned": 0,
+          "hits": 1,
+          "roi": -1.0,
+          "hit_rate": 0.03125
+        },
+        "三連複": {
+          "count": 60,
+          "invested": 99600,
+          "returned": 0,
+          "hits": 0,
+          "roi": -1.0,
+          "hit_rate": 0.0
+        }
+      },
+      "config": {
+        "min_confidence": "A",
+        "min_primary_ev": 0.8,
+        "min_top3_ev": 1.0,
+        "score_diff_1_2_for_A": 7.0,
+        "score_diff_1_3_for_B": 7.0
+      }
+    },
+    {
+      "total_races": 716,
+      "bet_races": 31,
+      "pass_races": 685,
+      "total_invested": 544400,
+      "total_returned": 711820,
+      "profit": 167420,
+      "roi": 0.30753122703894187,
+      "hit_rate": 0.029411764705882353,
+      "total_bets": 170,
+      "bet_type_breakdown": {
+        "単勝": {
+          "count": 31,
+          "invested": 211400,
+          "returned": 235900,
+          "hits": 3,
+          "roi": 0.11589403973509937,
+          "hit_rate": 0.0967741935483871
+        },
+        "馬連": {
+          "count": 47,
+          "invested": 160800,
+          "returned": 475920,
+          "hits": 1,
+          "roi": 1.9597014925373135,
+          "hit_rate": 0.02127659574468085
+        },
+        "ワイド": {
+          "count": 32,
+          "invested": 72600,
+          "returned": 0,
+          "hits": 1,
+          "roi": -1.0,
+          "hit_rate": 0.03125
+        },
+        "三連複": {
+          "count": 60,
+          "invested": 99600,
+          "returned": 0,
+          "hits": 0,
+          "roi": -1.0,
+          "hit_rate": 0.0
+        }
+      },
+      "config": {
+        "min_confidence": "A",
+        "min_primary_ev": 0.8,
+        "min_top3_ev": 1.0,
+        "score_diff_1_2_for_A": 7.0,
+        "score_diff_1_3_for_B": 3.0
+      }
+    },
+    {
+      "total_races": 716,
+      "bet_races": 31,
+      "pass_races": 685,
+      "total_invested": 544400,
+      "total_returned": 711820,
+      "profit": 167420,
+      "roi": 0.30753122703894187,
+      "hit_rate": 0.029411764705882353,
+      "total_bets": 170,
+      "bet_type_breakdown": {
+        "単勝": {
+          "count": 31,
+          "invested": 211400,
+          "returned": 235900,
+          "hits": 3,
+          "roi": 0.11589403973509937,
+          "hit_rate": 0.0967741935483871
+        },
+        "馬連": {
+          "count": 47,
+          "invested": 160800,
+          "returned": 475920,
+          "hits": 1,
+          "roi": 1.9597014925373135,
+          "hit_rate": 0.02127659574468085
+        },
+        "ワイド": {
+          "count": 32,
+          "invested": 72600,
+          "returned": 0,
+          "hits": 1,
+          "roi": -1.0,
+          "hit_rate": 0.03125
+        },
+        "三連複": {
+          "count": 60,
+          "invested": 99600,
+          "returned": 0,
+          "hits": 0,
+          "roi": -1.0,
+          "hit_rate": 0.0
+        }
+      },
+      "config": {
+        "min_confidence": "A",
+        "min_primary_ev": 0.8,
+        "min_top3_ev": 1.0,
+        "score_diff_1_2_for_A": 7.0,
+        "score_diff_1_3_for_B": 5.0
+      }
+    },
+    {
+      "total_races": 716,
+      "bet_races": 31,
+      "pass_races": 685,
+      "total_invested": 544400,
+      "total_returned": 711820,
+      "profit": 167420,
+      "roi": 0.30753122703894187,
+      "hit_rate": 0.029411764705882353,
+      "total_bets": 170,
+      "bet_type_breakdown": {
+        "単勝": {
+          "count": 31,
+          "invested": 211400,
+          "returned": 235900,
+          "hits": 3,
+          "roi": 0.11589403973509937,
+          "hit_rate": 0.0967741935483871
+        },
+        "馬連": {
+          "count": 47,
+          "invested": 160800,
+          "returned": 475920,
+          "hits": 1,
+          "roi": 1.9597014925373135,
+          "hit_rate": 0.02127659574468085
+        },
+        "ワイド": {
+          "count": 32,
+          "invested": 72600,
+          "returned": 0,
+          "hits": 1,
+          "roi": -1.0,
+          "hit_rate": 0.03125
+        },
+        "三連複": {
+          "count": 60,
+          "invested": 99600,
+          "returned": 0,
+          "hits": 0,
+          "roi": -1.0,
+          "hit_rate": 0.0
+        }
+      },
+      "config": {
+        "min_confidence": "A",
+        "min_primary_ev": 0.8,
+        "min_top3_ev": 1.0,
+        "score_diff_1_2_for_A": 7.0,
+        "score_diff_1_3_for_B": 7.0
+      }
+    },
+    {
+      "total_races": 716,
+      "bet_races": 31,
+      "pass_races": 685,
+      "total_invested": 544400,
+      "total_returned": 711820,
+      "profit": 167420,
+      "roi": 0.30753122703894187,
+      "hit_rate": 0.029411764705882353,
+      "total_bets": 170,
+      "bet_type_breakdown": {
+        "単勝": {
+          "count": 31,
+          "invested": 211400,
+          "returned": 235900,
+          "hits": 3,
+          "roi": 0.11589403973509937,
+          "hit_rate": 0.0967741935483871
+        },
+        "馬連": {
+          "count": 47,
+          "invested": 160800,
+          "returned": 475920,
+          "hits": 1,
+          "roi": 1.9597014925373135,
+          "hit_rate": 0.02127659574468085
+        },
+        "ワイド": {
+          "count": 32,
+          "invested": 72600,
+          "returned": 0,
+          "hits": 1,
+          "roi": -1.0,
+          "hit_rate": 0.03125
+        },
+        "三連複": {
+          "count": 60,
+          "invested": 99600,
+          "returned": 0,
+          "hits": 0,
+          "roi": -1.0,
+          "hit_rate": 0.0
+        }
+      },
+      "config": {
+        "min_confidence": "A",
+        "min_primary_ev": 0.8,
+        "min_top3_ev": 1.0,
+        "score_diff_1_2_for_A": 7.0,
+        "score_diff_1_3_for_B": 3.0
+      }
+    },
+    {
+      "total_races": 716,
+      "bet_races": 31,
+      "pass_races": 685,
+      "total_invested": 544400,
+      "total_returned": 711820,
+      "profit": 167420,
+      "roi": 0.30753122703894187,
+      "hit_rate": 0.029411764705882353,
+      "total_bets": 170,
+      "bet_type_breakdown": {
+        "単勝": {
+          "count": 31,
+          "invested": 211400,
+          "returned": 235900,
+          "hits": 3,
+          "roi": 0.11589403973509937,
+          "hit_rate": 0.0967741935483871
+        },
+        "馬連": {
+          "count": 47,
+          "invested": 160800,
+          "returned": 475920,
+          "hits": 1,
+          "roi": 1.9597014925373135,
+          "hit_rate": 0.02127659574468085
+        },
+        "ワイド": {
+          "count": 32,
+          "invested": 72600,
+          "returned": 0,
+          "hits": 1,
+          "roi": -1.0,
+          "hit_rate": 0.03125
+        },
+        "三連複": {
+          "count": 60,
+          "invested": 99600,
+          "returned": 0,
+          "hits": 0,
+          "roi": -1.0,
+          "hit_rate": 0.0
+        }
+      },
+      "config": {
+        "min_confidence": "A",
+        "min_primary_ev": 0.8,
+        "min_top3_ev": 1.0,
+        "score_diff_1_2_for_A": 7.0,
+        "score_diff_1_3_for_B": 5.0
+      }
+    },
+    {
+      "total_races": 716,
+      "bet_races": 31,
+      "pass_races": 685,
+      "total_invested": 544400,
+      "total_returned": 711820,
+      "profit": 167420,
+      "roi": 0.30753122703894187,
+      "hit_rate": 0.029411764705882353,
+      "total_bets": 170,
+      "bet_type_breakdown": {
+        "単勝": {
+          "count": 31,
+          "invested": 211400,
+          "returned": 235900,
+          "hits": 3,
+          "roi": 0.11589403973509937,
+          "hit_rate": 0.0967741935483871
+        },
+        "馬連": {
+          "count": 47,
+          "invested": 160800,
+          "returned": 475920,
+          "hits": 1,
+          "roi": 1.9597014925373135,
+          "hit_rate": 0.02127659574468085
+        },
+        "ワイド": {
+          "count": 32,
+          "invested": 72600,
+          "returned": 0,
+          "hits": 1,
+          "roi": -1.0,
+          "hit_rate": 0.03125
+        },
+        "三連複": {
+          "count": 60,
+          "invested": 99600,
+          "returned": 0,
+          "hits": 0,
+          "roi": -1.0,
+          "hit_rate": 0.0
+        }
+      },
+      "config": {
+        "min_confidence": "A",
+        "min_primary_ev": 0.8,
+        "min_top3_ev": 1.0,
+        "score_diff_1_2_for_A": 7.0,
+        "score_diff_1_3_for_B": 7.0
+      }
+    },
+    {
+      "total_races": 716,
+      "bet_races": 31,
+      "pass_races": 685,
+      "total_invested": 544400,
+      "total_returned": 711820,
+      "profit": 167420,
+      "roi": 0.30753122703894187,
+      "hit_rate": 0.029411764705882353,
+      "total_bets": 170,
+      "bet_type_breakdown": {
+        "単勝": {
+          "count": 31,
+          "invested": 211400,
+          "returned": 235900,
+          "hits": 3,
+          "roi": 0.11589403973509937,
+          "hit_rate": 0.0967741935483871
+        },
+        "馬連": {
+          "count": 47,
+          "invested": 160800,
+          "returned": 475920,
+          "hits": 1,
+          "roi": 1.9597014925373135,
+          "hit_rate": 0.02127659574468085
+        },
+        "ワイド": {
+          "count": 32,
+          "invested": 72600,
+          "returned": 0,
+          "hits": 1,
+          "roi": -1.0,
+          "hit_rate": 0.03125
+        },
+        "三連複": {
+          "count": 60,
+          "invested": 99600,
+          "returned": 0,
+          "hits": 0,
+          "roi": -1.0,
+          "hit_rate": 0.0
+        }
+      },
+      "config": {
+        "min_confidence": "A",
+        "min_primary_ev": 0.8,
+        "min_top3_ev": 1.3,
+        "score_diff_1_2_for_A": 7.0,
+        "score_diff_1_3_for_B": 3.0
+      }
+    },
+    {
+      "total_races": 716,
+      "bet_races": 31,
+      "pass_races": 685,
+      "total_invested": 544400,
+      "total_returned": 711820,
+      "profit": 167420,
+      "roi": 0.30753122703894187,
+      "hit_rate": 0.029411764705882353,
+      "total_bets": 170,
+      "bet_type_breakdown": {
+        "単勝": {
+          "count": 31,
+          "invested": 211400,
+          "returned": 235900,
+          "hits": 3,
+          "roi": 0.11589403973509937,
+          "hit_rate": 0.0967741935483871
+        },
+        "馬連": {
+          "count": 47,
+          "invested": 160800,
+          "returned": 475920,
+          "hits": 1,
+          "roi": 1.9597014925373135,
+          "hit_rate": 0.02127659574468085
+        },
+        "ワイド": {
+          "count": 32,
+          "invested": 72600,
+          "returned": 0,
+          "hits": 1,
+          "roi": -1.0,
+          "hit_rate": 0.03125
+        },
+        "三連複": {
+          "count": 60,
+          "invested": 99600,
+          "returned": 0,
+          "hits": 0,
+          "roi": -1.0,
+          "hit_rate": 0.0
+        }
+      },
+      "config": {
+        "min_confidence": "A",
+        "min_primary_ev": 0.8,
+        "min_top3_ev": 1.3,
+        "score_diff_1_2_for_A": 7.0,
+        "score_diff_1_3_for_B": 5.0
+      }
+    },
+    {
+      "total_races": 716,
+      "bet_races": 31,
+      "pass_races": 685,
+      "total_invested": 544400,
+      "total_returned": 711820,
+      "profit": 167420,
+      "roi": 0.30753122703894187,
+      "hit_rate": 0.029411764705882353,
+      "total_bets": 170,
+      "bet_type_breakdown": {
+        "単勝": {
+          "count": 31,
+          "invested": 211400,
+          "returned": 235900,
+          "hits": 3,
+          "roi": 0.11589403973509937,
+          "hit_rate": 0.0967741935483871
+        },
+        "馬連": {
+          "count": 47,
+          "invested": 160800,
+          "returned": 475920,
+          "hits": 1,
+          "roi": 1.9597014925373135,
+          "hit_rate": 0.02127659574468085
+        },
+        "ワイド": {
+          "count": 32,
+          "invested": 72600,
+          "returned": 0,
+          "hits": 1,
+          "roi": -1.0,
+          "hit_rate": 0.03125
+        },
+        "三連複": {
+          "count": 60,
+          "invested": 99600,
+          "returned": 0,
+          "hits": 0,
+          "roi": -1.0,
+          "hit_rate": 0.0
+        }
+      },
+      "config": {
+        "min_confidence": "A",
+        "min_primary_ev": 0.8,
+        "min_top3_ev": 1.3,
+        "score_diff_1_2_for_A": 7.0,
+        "score_diff_1_3_for_B": 7.0
+      }
+    },
+    {
+      "total_races": 716,
+      "bet_races": 31,
+      "pass_races": 685,
+      "total_invested": 544400,
+      "total_returned": 711820,
+      "profit": 167420,
+      "roi": 0.30753122703894187,
+      "hit_rate": 0.029411764705882353,
+      "total_bets": 170,
+      "bet_type_breakdown": {
+        "単勝": {
+          "count": 31,
+          "invested": 211400,
+          "returned": 235900,
+          "hits": 3,
+          "roi": 0.11589403973509937,
+          "hit_rate": 0.0967741935483871
+        },
+        "馬連": {
+          "count": 47,
+          "invested": 160800,
+          "returned": 475920,
+          "hits": 1,
+          "roi": 1.9597014925373135,
+          "hit_rate": 0.02127659574468085
+        },
+        "ワイド": {
+          "count": 32,
+          "invested": 72600,
+          "returned": 0,
+          "hits": 1,
+          "roi": -1.0,
+          "hit_rate": 0.03125
+        },
+        "三連複": {
+          "count": 60,
+          "invested": 99600,
+          "returned": 0,
+          "hits": 0,
+          "roi": -1.0,
+          "hit_rate": 0.0
+        }
+      },
+      "config": {
+        "min_confidence": "A",
+        "min_primary_ev": 0.8,
+        "min_top3_ev": 1.3,
+        "score_diff_1_2_for_A": 7.0,
+        "score_diff_1_3_for_B": 3.0
+      }
+    },
+    {
+      "total_races": 716,
+      "bet_races": 31,
+      "pass_races": 685,
+      "total_invested": 544400,
+      "total_returned": 711820,
+      "profit": 167420,
+      "roi": 0.30753122703894187,
+      "hit_rate": 0.029411764705882353,
+      "total_bets": 170,
+      "bet_type_breakdown": {
+        "単勝": {
+          "count": 31,
+          "invested": 211400,
+          "returned": 235900,
+          "hits": 3,
+          "roi": 0.11589403973509937,
+          "hit_rate": 0.0967741935483871
+        },
+        "馬連": {
+          "count": 47,
+          "invested": 160800,
+          "returned": 475920,
+          "hits": 1,
+          "roi": 1.9597014925373135,
+          "hit_rate": 0.02127659574468085
+        },
+        "ワイド": {
+          "count": 32,
+          "invested": 72600,
+          "returned": 0,
+          "hits": 1,
+          "roi": -1.0,
+          "hit_rate": 0.03125
+        },
+        "三連複": {
+          "count": 60,
+          "invested": 99600,
+          "returned": 0,
+          "hits": 0,
+          "roi": -1.0,
+          "hit_rate": 0.0
+        }
+      },
+      "config": {
+        "min_confidence": "A",
+        "min_primary_ev": 0.8,
+        "min_top3_ev": 1.3,
+        "score_diff_1_2_for_A": 7.0,
+        "score_diff_1_3_for_B": 5.0
+      }
+    },
+    {
+      "total_races": 716,
+      "bet_races": 31,
+      "pass_races": 685,
+      "total_invested": 544400,
+      "total_returned": 711820,
+      "profit": 167420,
+      "roi": 0.30753122703894187,
+      "hit_rate": 0.029411764705882353,
+      "total_bets": 170,
+      "bet_type_breakdown": {
+        "単勝": {
+          "count": 31,
+          "invested": 211400,
+          "returned": 235900,
+          "hits": 3,
+          "roi": 0.11589403973509937,
+          "hit_rate": 0.0967741935483871
+        },
+        "馬連": {
+          "count": 47,
+          "invested": 160800,
+          "returned": 475920,
+          "hits": 1,
+          "roi": 1.9597014925373135,
+          "hit_rate": 0.02127659574468085
+        },
+        "ワイド": {
+          "count": 32,
+          "invested": 72600,
+          "returned": 0,
+          "hits": 1,
+          "roi": -1.0,
+          "hit_rate": 0.03125
+        },
+        "三連複": {
+          "count": 60,
+          "invested": 99600,
+          "returned": 0,
+          "hits": 0,
+          "roi": -1.0,
+          "hit_rate": 0.0
+        }
+      },
+      "config": {
+        "min_confidence": "A",
+        "min_primary_ev": 0.8,
+        "min_top3_ev": 1.3,
+        "score_diff_1_2_for_A": 7.0,
+        "score_diff_1_3_for_B": 7.0
+      }
+    },
+    {
+      "total_races": 716,
+      "bet_races": 31,
+      "pass_races": 685,
+      "total_invested": 544400,
+      "total_returned": 711820,
+      "profit": 167420,
+      "roi": 0.30753122703894187,
+      "hit_rate": 0.029411764705882353,
+      "total_bets": 170,
+      "bet_type_breakdown": {
+        "単勝": {
+          "count": 31,
+          "invested": 211400,
+          "returned": 235900,
+          "hits": 3,
+          "roi": 0.11589403973509937,
+          "hit_rate": 0.0967741935483871
+        },
+        "馬連": {
+          "count": 47,
+          "invested": 160800,
+          "returned": 475920,
+          "hits": 1,
+          "roi": 1.9597014925373135,
+          "hit_rate": 0.02127659574468085
+        },
+        "ワイド": {
+          "count": 32,
+          "invested": 72600,
+          "returned": 0,
+          "hits": 1,
+          "roi": -1.0,
+          "hit_rate": 0.03125
+        },
+        "三連複": {
+          "count": 60,
+          "invested": 99600,
+          "returned": 0,
+          "hits": 0,
+          "roi": -1.0,
+          "hit_rate": 0.0
+        }
+      },
+      "config": {
+        "min_confidence": "A",
+        "min_primary_ev": 0.8,
+        "min_top3_ev": 1.3,
+        "score_diff_1_2_for_A": 7.0,
+        "score_diff_1_3_for_B": 3.0
+      }
+    },
+    {
+      "total_races": 716,
+      "bet_races": 31,
+      "pass_races": 685,
+      "total_invested": 544400,
+      "total_returned": 711820,
+      "profit": 167420,
+      "roi": 0.30753122703894187,
+      "hit_rate": 0.029411764705882353,
+      "total_bets": 170,
+      "bet_type_breakdown": {
+        "単勝": {
+          "count": 31,
+          "invested": 211400,
+          "returned": 235900,
+          "hits": 3,
+          "roi": 0.11589403973509937,
+          "hit_rate": 0.0967741935483871
+        },
+        "馬連": {
+          "count": 47,
+          "invested": 160800,
+          "returned": 475920,
+          "hits": 1,
+          "roi": 1.9597014925373135,
+          "hit_rate": 0.02127659574468085
+        },
+        "ワイド": {
+          "count": 32,
+          "invested": 72600,
+          "returned": 0,
+          "hits": 1,
+          "roi": -1.0,
+          "hit_rate": 0.03125
+        },
+        "三連複": {
+          "count": 60,
+          "invested": 99600,
+          "returned": 0,
+          "hits": 0,
+          "roi": -1.0,
+          "hit_rate": 0.0
+        }
+      },
+      "config": {
+        "min_confidence": "A",
+        "min_primary_ev": 0.8,
+        "min_top3_ev": 1.3,
+        "score_diff_1_2_for_A": 7.0,
+        "score_diff_1_3_for_B": 5.0
+      }
+    },
+    {
+      "total_races": 716,
+      "bet_races": 31,
+      "pass_races": 685,
+      "total_invested": 544400,
+      "total_returned": 711820,
+      "profit": 167420,
+      "roi": 0.30753122703894187,
+      "hit_rate": 0.029411764705882353,
+      "total_bets": 170,
+      "bet_type_breakdown": {
+        "単勝": {
+          "count": 31,
+          "invested": 211400,
+          "returned": 235900,
+          "hits": 3,
+          "roi": 0.11589403973509937,
+          "hit_rate": 0.0967741935483871
+        },
+        "馬連": {
+          "count": 47,
+          "invested": 160800,
+          "returned": 475920,
+          "hits": 1,
+          "roi": 1.9597014925373135,
+          "hit_rate": 0.02127659574468085
+        },
+        "ワイド": {
+          "count": 32,
+          "invested": 72600,
+          "returned": 0,
+          "hits": 1,
+          "roi": -1.0,
+          "hit_rate": 0.03125
+        },
+        "三連複": {
+          "count": 60,
+          "invested": 99600,
+          "returned": 0,
+          "hits": 0,
+          "roi": -1.0,
+          "hit_rate": 0.0
+        }
+      },
+      "config": {
+        "min_confidence": "A",
+        "min_primary_ev": 0.8,
+        "min_top3_ev": 1.3,
+        "score_diff_1_2_for_A": 7.0,
+        "score_diff_1_3_for_B": 7.0
+      }
+    },
+    {
+      "total_races": 716,
+      "bet_races": 31,
+      "pass_races": 685,
+      "total_invested": 544400,
+      "total_returned": 711820,
+      "profit": 167420,
+      "roi": 0.30753122703894187,
+      "hit_rate": 0.029411764705882353,
+      "total_bets": 170,
+      "bet_type_breakdown": {
+        "単勝": {
+          "count": 31,
+          "invested": 211400,
+          "returned": 235900,
+          "hits": 3,
+          "roi": 0.11589403973509937,
+          "hit_rate": 0.0967741935483871
+        },
+        "馬連": {
+          "count": 47,
+          "invested": 160800,
+          "returned": 475920,
+          "hits": 1,
+          "roi": 1.9597014925373135,
+          "hit_rate": 0.02127659574468085
+        },
+        "ワイド": {
+          "count": 32,
+          "invested": 72600,
+          "returned": 0,
+          "hits": 1,
+          "roi": -1.0,
+          "hit_rate": 0.03125
+        },
+        "三連複": {
+          "count": 60,
+          "invested": 99600,
+          "returned": 0,
+          "hits": 0,
+          "roi": -1.0,
+          "hit_rate": 0.0
+        }
+      },
+      "config": {
+        "min_confidence": "A",
+        "min_primary_ev": 1.0,
+        "min_top3_ev": 1.0,
+        "score_diff_1_2_for_A": 7.0,
+        "score_diff_1_3_for_B": 3.0
+      }
+    },
+    {
+      "total_races": 716,
+      "bet_races": 31,
+      "pass_races": 685,
+      "total_invested": 544400,
+      "total_returned": 711820,
+      "profit": 167420,
+      "roi": 0.30753122703894187,
+      "hit_rate": 0.029411764705882353,
+      "total_bets": 170,
+      "bet_type_breakdown": {
+        "単勝": {
+          "count": 31,
+          "invested": 211400,
+          "returned": 235900,
+          "hits": 3,
+          "roi": 0.11589403973509937,
+          "hit_rate": 0.0967741935483871
+        },
+        "馬連": {
+          "count": 47,
+          "invested": 160800,
+          "returned": 475920,
+          "hits": 1,
+          "roi": 1.9597014925373135,
+          "hit_rate": 0.02127659574468085
+        },
+        "ワイド": {
+          "count": 32,
+          "invested": 72600,
+          "returned": 0,
+          "hits": 1,
+          "roi": -1.0,
+          "hit_rate": 0.03125
+        },
+        "三連複": {
+          "count": 60,
+          "invested": 99600,
+          "returned": 0,
+          "hits": 0,
+          "roi": -1.0,
+          "hit_rate": 0.0
+        }
+      },
+      "config": {
+        "min_confidence": "A",
+        "min_primary_ev": 1.0,
+        "min_top3_ev": 1.0,
+        "score_diff_1_2_for_A": 7.0,
+        "score_diff_1_3_for_B": 5.0
+      }
+    }
+  ]
+}

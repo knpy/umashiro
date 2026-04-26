@@ -1,0 +1,47 @@
+{
+  "name": "optimized_v1",
+  "version": "v1.0-optuna",
+  "description": "Optuna最適化 (2025年, 100トライアル, composite)",
+  "created": "2026-04-26",
+  "is_official": false,
+  "weights": {
+    "time_index": 0.1536,
+    "last_3f_index": 0.0433,
+    "stability_index": 0.0484,
+    "course_fitness": 0.1914,
+    "pace_advantage": 0.0714,
+    "form_cycle": 0.0311,
+    "weight_score": 0.063,
+    "track_fitness": 0.2379,
+    "class_score": 0.1152,
+    "rest_days_score": 0.0105,
+    "gate_bias_score": 0.0104,
+    "jockey_score": 0.0237
+  },
+  "optimization": {
+    "metric": "composite",
+    "best_value": 0.2069,
+    "n_trials": 100,
+    "year": 2025,
+    "train_metrics": {
+      "avg_spearman": 0.11409642520896139,
+      "top1_hit_rate": 0.13214990138067062,
+      "top3_hit_rate": 0.3155818540433925,
+      "avg_top3_coverage": 0.2761341222879682,
+      "n_races": 507
+    },
+    "val_metrics": {
+      "avg_spearman": 0.19567281310933815,
+      "top1_hit_rate": 0.22009569377990432,
+      "top3_hit_rate": 0.45454545454545453,
+      "avg_top3_coverage": 0.33014354066985685,
+      "n_races": 209
+    }
+  },
+  "strategy": {
+    "min_confidence": "B",
+    "min_primary_ev": 1.3,
+    "max_bet_points": 8,
+    "include_favorite_in_partners": true
+  }
+}

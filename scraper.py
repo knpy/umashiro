@@ -486,11 +486,14 @@ class NetkeibaScraper:
             frame_el = row.select_one("td[class*='Waku']")
             frame_number = frame_el.get_text(strip=True) if frame_el else ""
 
+            # 馬番: 結果ページでは class="Num Txt_C"、出馬表では class*="Umaban"
             umaban_el = row.select_one("td[class*='Umaban']")
+            if not umaban_el:
+                umaban_el = row.select_one("td.Num.Txt_C")
             horse_number = umaban_el.get_text(strip=True) if umaban_el else ""
 
             horse_name, horse_id = "", ""
-            horse_el = row.select_one(".HorseInfo a, .HorseName a, .Horse_Name a")
+            horse_el = row.select_one(".Horse_Info a, .HorseInfo a, .HorseName a, .Horse_Name a")
             if horse_el:
                 horse_name = horse_el.get_text(strip=True)
                 href = horse_el.get("href", "")
