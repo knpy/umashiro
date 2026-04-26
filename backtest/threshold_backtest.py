@@ -82,9 +82,11 @@ def simulate_strategy(db, races, config, model_config=None, base_times_data=None
 
 
 DEFAULT_GRID = {
-    "min_primary_ev": [0.8, 0.9, 1.0, 1.1, 1.2, 1.3, 1.5],
-    "min_top3_ev": [1.0, 1.3, 1.5],
+    "min_primary_ev": [0.8, 1.0, 1.2, 1.5],
+    "min_top3_ev": [1.0, 1.3],
     "min_confidence": ["A", "B", "C"],
+    "min_history_races": [0, 1, 2],
+    "min_scored_horses": [3, 6, 8],
     "score_diff_1_2_for_A": [3.0, 5.0, 7.0],
     "score_diff_1_3_for_B": [3.0, 5.0, 7.0],
 }
