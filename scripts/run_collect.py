@@ -52,7 +52,7 @@ def fetch_result(scraper, race_id):
     )
     if resp.status_code != 200:
         return [], {}
-    resp.encoding = "utf-8"
+    resp.encoding = "euc-jp"
     soup = BeautifulSoup(resp.text, "html.parser")
     return _parse_result_sp(soup)
 
@@ -137,10 +137,15 @@ def _parse_result_sp(soup):
 
         odds_el = row.select_one("td.Odds")
         odds = 0.0
+        pop = 0
         if odds_el:
-            odds_m = re.search(r"(\d+\.\d+)", odds_el.get_text(strip=True))
+            odds_text = odds_el.get_text(strip=True)
+            odds_m = re.search(r"(\d+\.\d+)", odds_text)
             if odds_m:
                 odds = float(odds_m.group(1))
+            pop_m = re.search(r"(\d+)人気", odds_text)
+            if pop_m:
+                pop = int(pop_m.group(1))
 
         time_el = row.select_one("td.Time")
         time_str = ""
@@ -151,7 +156,7 @@ def _parse_result_sp(soup):
 
         finishing_order.append({
             "rank": rank, "num": umaban, "name": horse_name,
-            "pop": 0, "odds": odds, "time": time_str,
+            "pop": pop, "odds": odds, "time": time_str,
         })
 
     payouts = _parse_payouts_sp(soup)
@@ -159,23 +164,60 @@ def _parse_result_sp(soup):
 
 
 def _parse_payouts_sp(soup):
-    """SP版の払い戻しテーブルをパースする"""
+    """SP版の払い戻しテーブルをパースする
+
+    SP版HTMLは .Result セル内の <ul><li><span> で馬番を構造化している。
+    複勝・ワイドは複数組あるため、リスト形式で格納する。
+    """
     payouts = {}
     for tr in soup.select("tr"):
         cells = tr.select("th, td")
-        if len(cells) >= 3:
-            bet_type = cells[0].get_text(strip=True)
-            payout_text = cells[2].get_text(strip=True)
-            selections = cells[1].get_text(strip=True)
-            payout_m = re.search(r"([\d,]+)円", payout_text)
-            if payout_m and bet_type in ("単勝", "複勝", "馬連", "馬単", "ワイド", "3連複", "3連単",
-                                          "三連複", "三連単"):
-                normalized_type = bet_type.replace("3連複", "三連複").replace("3連単", "三連単")
-                payout_val = int(payout_m.group(1).replace(",", ""))
-                payouts[normalized_type] = {
-                    "selections": selections,
-                    "payout": payout_val,
-                }
+        if len(cells) < 3:
+            continue
+        bet_type = cells[0].get_text(strip=True)
+        if bet_type not in ("単勝", "複勝", "馬連", "馬単", "ワイド", "枠連",
+                            "3連複", "3連単", "三連複", "三連単"):
+            continue
+        normalized_type = bet_type.replace("3連複", "三連複").replace("3連単", "三連単")
+
+        result_cell = cells[1]
+        payout_cell = cells[2]
+
+        # 払戻金額を抽出（複数ある場合がある: 複勝・ワイド）
+        payout_amounts = [int(m.replace(",", ""))
+                          for m in re.findall(r"([\d,]+)円", payout_cell.get_text(strip=True))]
+        if not payout_amounts:
+            continue
+
+        # 馬番を <ul> 単位で抽出（複数組: ワイド等）
+        uls = result_cell.select("ul")
+        if uls:
+            groups = []
+            for ul in uls:
+                nums = [li.get_text(strip=True) for li in ul.select("li > span, span")
+                        if li.get_text(strip=True).isdigit()]
+                if nums:
+                    groups.append("-".join(nums))
+        else:
+            # 単勝・複勝: <span> で区切られている
+            spans = result_cell.select("span")
+            nums = [s.get_text(strip=True) for s in spans
+                    if s.get_text(strip=True).isdigit()]
+            groups = [n for n in nums] if nums else []
+
+        if normalized_type in ("ワイド", "複勝"):
+            # 複数結果を全て格納
+            entries = []
+            for i, payout_val in enumerate(payout_amounts):
+                sel = groups[i] if i < len(groups) else ""
+                entries.append({"selections": sel, "payout": payout_val})
+            payouts[normalized_type] = entries
+        else:
+            sel = groups[0] if groups else ""
+            payouts[normalized_type] = {
+                "selections": sel,
+                "payout": payout_amounts[0],
+            }
     return payouts
 
 

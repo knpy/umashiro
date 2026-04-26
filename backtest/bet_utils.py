@@ -37,8 +37,18 @@ def check_bet_result(bet, payouts, finishing_order):
         hit = False
 
     if hit:
-        payout_info = payouts.get(bt, {})
-        payout_per_100 = payout_info.get("payout", 0)
+        payout_entry = payouts.get(bt, {})
+        # ワイド��複勝はリスト形式の場合がある — selectionsが一致するエン��リを探す
+        if isinstance(payout_entry, list):
+            matched = None
+            for entry in payout_entry:
+                entry_nums = sorted(entry.get("selections", "").split("-"))
+                if entry_nums == sel_nums:
+                    matched = entry
+                    break
+            payout_per_100 = matched["payout"] if matched else 0
+        else:
+            payout_per_100 = payout_entry.get("payout", 0)
         amount = bet["amount"]
         payout = payout_per_100 * amount // 100
         return "win", payout, payout - amount
