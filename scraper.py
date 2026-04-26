@@ -115,7 +115,7 @@ class NetkeibaScraper:
             url, params=params, timeout=30,
             headers=self.SP_HEADERS,
         )
-        resp.encoding = "utf-8"
+        resp.encoding = "euc-jp"
         return BeautifulSoup(resp.text, "html.parser")
 
     # =========================================================================

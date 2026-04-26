@@ -153,6 +153,7 @@ def decide(scores: list[HorseScore], entries, race_id: str = "",
         reasons.append(f"主軸EV={primary_ev:.2f}, 上位3頭最大EV={top3_max_ev:.2f}(妙味不足)")
 
     if primary_ev == 0:
+        decision.verdict = "PASS"
         reasons.append("オッズ未取得のためEV判定不可")
 
     if not reasons:
