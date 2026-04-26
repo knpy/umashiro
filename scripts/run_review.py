@@ -77,9 +77,10 @@ def load_reviews_for_dates(dates: list[str]) -> list[dict]:
 
 
 def parse_course_info(course_info: str) -> dict:
-    """course_infoから馬場・距離を抽出"""
+    """course_infoから馬場・距離・馬場状態を抽出"""
     surface = "不明"
     distance = 0
+    track_condition = ""
     if "芝" in course_info:
         surface = "芝"
     elif "ダ" in course_info:
@@ -87,7 +88,11 @@ def parse_course_info(course_info: str) -> dict:
     m = re.search(r"(\d{3,4})m", course_info)
     if m:
         distance = int(m.group(1))
-    return {"surface": surface, "distance": distance}
+    for cond in ["不良", "重", "稍重", "良"]:
+        if cond in course_info:
+            track_condition = cond
+            break
+    return {"surface": surface, "distance": distance, "track_condition": track_condition}
 
 
 def distance_category(dist: int) -> str:
@@ -304,6 +309,9 @@ def collect_hypothesis_evidence(preds: list[dict], results: list[dict]) -> list[
 
     for hyp in hypotheses:
         cond = hyp.get("condition", {})
+        # 空条件、または予想データに未実装フィールドが必要な仮説はスキップ
+        if not cond or cond.get("requires_field"):
+            continue
         for p in preds:
             r = result_map.get(p["race_id"])
             if not r or not r.get("finishing_order"):
@@ -318,6 +326,9 @@ def collect_hypothesis_evidence(preds: list[dict], results: list[dict]) -> list[
                 continue
             if cond.get("distance_min") and course["distance"] < cond["distance_min"]:
                 continue
+            if cond.get("track_condition"):
+                if course["track_condition"] not in cond["track_condition"]:
+                    continue
 
             # 対象馬を特定（仮説の条件に合致する馬がいるか）
             actual_rank_map = {f["num"]: f["rank"] for f in r["finishing_order"]}

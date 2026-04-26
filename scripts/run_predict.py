@@ -88,7 +88,8 @@ def find_race_ids(scraper, date, venue_filter=""):
     return sorted(races, key=lambda r: r["race_id"])
 
 
-def run_prediction(scraper, race_id, date, model_config, model_name):
+def run_prediction(scraper, race_id, date, model_config, model_name,
+                   base_times_data=None):
     """1レースの予想を実行"""
     # 出馬表取得
     race = scraper.get_race_entries(race_id)
@@ -115,7 +116,8 @@ def run_prediction(scraper, race_id, date, model_config, model_name):
             entry.jockey_stats = jockey_cache[entry.jockey_id]
 
     # スコアリング
-    scores = calculate_scores(race, model_config=model_config)
+    scores = calculate_scores(race, model_config=model_config,
+                              base_times_data=base_times_data)
 
     # BET/PASS判定
     decision = decide(scores, race.entries, race_id=race_id, race_name=race.race_name)
@@ -236,6 +238,14 @@ def main():
     print(format_status())
     print()
 
+    # base_times読み込み
+    base_times_path = project_root / "models" / "base_times.json"
+    base_times_data = None
+    if base_times_path.exists():
+        base_times_data = json.loads(base_times_path.read_text(encoding="utf-8"))
+        print(f"ベースタイム: {base_times_path.name} (会場数: {len(base_times_data.get('per_venue', {}))})")
+        print()
+
     scraper = NetkeibaScraper(delay=args.delay)
 
     # レース一覧取得
@@ -250,7 +260,8 @@ def main():
         print(f"--- {race_info['text']} ({rid}) ---")
 
         for model_name, model_config in models:
-            result = run_prediction(scraper, rid, args.date, model_config, model_name)
+            result = run_prediction(scraper, rid, args.date, model_config, model_name,
+                                       base_times_data=base_times_data)
             if result:
                 tag = "[OFFICIAL]" if model_config.get("is_official") else "[EXP]"
                 verdict_mark = "BET" if result["verdict"] == "BET" else "PASS"
